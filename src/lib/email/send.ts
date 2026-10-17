@@ -80,8 +80,9 @@ export async function sendTransactional(args: SendArgs): Promise<SendOutcome> {
   const sink = testSinkDir();
   if (sink) {
     const id = `test-sink:${randomUUID()}`;
-    await mkdir(sink, { recursive: true });
-    await writeFile(
+    try {
+      await mkdir(sink, { recursive: true });
+      await writeFile(
       path.join(sink, `${Date.now()}-${args.type}-${logId}.json`),
       JSON.stringify({
         id,
@@ -91,7 +92,11 @@ export async function sendTransactional(args: SendArgs): Promise<SendOutcome> {
         text: args.content.text,
         attachments: (args.attachments ?? []).map((a) => ({ filename: a.filename, contentId: a.contentId, bytes: a.content.length })),
       }),
-    );
+      );
+    } catch {
+      await finish(false, null, "Test e-posta dizinine yazılamadı.");
+      return { status: "failed", error: "Test e-posta dizinine yazılamadı." };
+    }
     await finish(true, id, null);
     return { status: "sent", providerId: id };
   }

@@ -1,57 +1,93 @@
 # ASUS × Sedat Bayrak Workshop — Başvuru ve Katılımcı Yönetimi
 
-Next.js (App Router) · TypeScript · Tailwind · Supabase (Postgres + Auth + RLS) · Resend · Vercel
+Next.js 16 (App Router) · TypeScript · Tailwind 4 · Supabase (Postgres + Auth + RLS) · Resend · Vercel
 
-## Durum
+Gerçek başvuru alan, admin onayıyla katılımcı kabul eden, QR kodlu davetiye gönderen ve kapıda tek kullanımlık check-in yapan MVP.
 
-| Aşama | Durum |
-|---|---|
-| 1. İnceleme / mimari | ✅ |
-| 2. Veritabanı + güvenlik (migration, RLS, atomik fonksiyonlar) | ✅ yerel PostgreSQL 16'da test edildi |
-| Çekirdek yardımcılar (QR token, CSV, telefon) | ✅ birim testli |
-| 3–6. Next.js uygulaması, e-posta, check-in UI, deploy | ⏳ npm erişimi bekleniyor |
+## Sayfalar
 
-## Mimari kararlar
+| Yol | Kim | Ne |
+|---|---|---|
+| `/` | Herkes | Landing page + başvuru formu |
+| `/kvkk`, `/gizlilik` | Herkes | Yasal metin iskeleti (**TASLAK**, hukuk onaylı metin bekleniyor) |
+| `/davetiye/<token>` | Davetiye sahibi | QR + giriş kodu (QR'ını kaybedenler için) |
+| `/admin/login` | Ekip | Giriş |
+| `/admin` | admin | Dashboard, arama, filtre, sıralama, sayfalama, CSV |
+| `/admin/basvurular/<id>` | admin | Detay, onay/ret/yedek/iptal, davetiye tekrar gönder/yeniden üret, e-posta logları + tekrar dene |
+| `/admin/ayarlar` | admin | Tarih, mekân, kapasite, başvuru açık/kapalı, KVKK sürümü, saklama süresi |
+| `/admin/check-in` | admin, checkin | Kamera ile QR okutma + manuel kod |
 
-- **Başvurular yalnızca sunucu rotasından yazılır.** Public (anon) anahtarın `applications` tablosuna yazma yetkisi yok; böylece rate limit, CAPTCHA ve Zod doğrulaması atlatılamaz.
-- **Otomatik onay imkânsız:** `applications` INSERT tetikleyicisi durumu daima `pending` yapar.
-- **Admin yetkisi** kullanıcı metadata'sından değil, istemcinin yazamadığı `staff_members` tablosundan okunur. Roller: `admin` (her şey), `checkin` (yalnızca kapı ekranı).
-- **Kritik işlemler Postgres fonksiyonlarında atomik:**
-  - `admin_approve` — kapasite kontrolü (global satır kilidi), onay ve davetiye tek işlemde; tekrar çağrıda aynı davetiye döner.
-  - `admin_set_status` — izinli durum geçişleri, denetim kaydı; onaylı iptal edilirse davetiye de iptal.
-  - `check_in` — koşullu UPDATE ile tek kullanımlık giriş; ilk kayıt asla değişmez.
-  - `claim_email` / `finish_email` — e-posta çift gönderim kilidi, başarısız gönderim logu ve tekrar deneme.
-- **QR token:** `HMAC(INVITATION_TOKEN_SECRET, davetiye_id)`; DB'de yalnızca SHA-256 hash. QR'da kişisel veri yok. Kapı için ayrıca 10 karakterlik manuel kod (ör. `7K3M-Q9TR-2X`).
-- **Tarih/mekân/kapasite** `event_settings` tablosunda, admin panelinden düzenlenir. `date_confirmed` / `venue_confirmed` false iken e-postalara ve sayfaya kesin bilgi yazılmaz.
+## Güvenlik mimarisi (özet)
 
-## Veritabanı kurulumu (Supabase)
+- **Başvurular yalnızca sunucu rotasından yazılır** (`/api/applications`): köken kontrolü → boyut sınırı → honeypot → IP ve e-posta rate limit (DB tabanlı, serverless uyumlu) → opsiyonel Turnstile → Zod → kayıt. Public anahtarın `applications` tablosuna hiçbir yetkisi yok.
+- **Otomatik onay imkânsız**: INSERT tetikleyicisi durumu daima `pending` yapar.
+- **Yetki iki katmanlı**: her sayfa/action/API `requireAdmin`/`requireStaff` ile doğrulanmış JWT (`getClaims`) + `staff_members` tablosundan rol okur; ayrıca tüm değişiklikler kullanıcının kendi oturumuyla `SECURITY DEFINER` Postgres fonksiyonlarından geçer ve fonksiyon da yetkiyi kontrol eder. Rol asla `user_metadata`'dan okunmaz.
+- **Atomik iş kuralları** (Postgres): `admin_approve` (kapasite + onay + davetiye, global satır kilidi, idempotent), `admin_set_status`, `check_in` (koşullu UPDATE, ilk kayıt değişmez), `claim_email`/`finish_email` (çift gönderim kilidi).
+- **QR**: `HMAC(INVITATION_TOKEN_SECRET, davetiye_id)`; DB'de yalnızca SHA-256 hash. QR'da kişisel veri yok. Kapı için 10 karakterlik manuel kod.
+- **Loglarda kişisel veri yok**; `email_logs` alıcı adresi tutmaz. CSV formül enjeksiyonuna karşı korumalı, yalnızca admin, her indirme denetim kaydına yazılır.
+- Güvenlik başlıkları (`frame-ancestors 'none'`, `nosniff`, HSTS, kamera yalnızca kendi origin), davetiye sayfasında `no-referrer` + `noindex`.
 
-1. Supabase'de proje oluşturun.
-2. `supabase/migrations/` altındaki dosyaları **sırayla** SQL Editor'de çalıştırın (veya `supabase db push`).
-3. Authentication → Users altında admin kullanıcısını oluşturun (e-posta + parola). Public sign-up'ı kapatın (Authentication → Providers → Email → "Allow new users to sign up" kapalı).
-4. SQL Editor'de admin yetkisini verin:
-   ```sql
-   insert into public.staff_members (user_id, role)
-   select id, 'admin' from auth.users where email = 'admin@ornek.com';
-   -- Kapı ekibi için: role = 'checkin'
-   ```
-5. Etkinlik bilgilerini girin (sonradan admin panelinden de yapılabilecek):
-   ```sql
-   update public.event_settings set capacity = 300 where id = 1;
-   ```
+## Yerel geliştirme
 
-## Testleri çalıştırma
+Gereksinimler: Node 20.9+ (22 önerilir), Docker (yerel Supabase için).
 
 ```bash
-# Veritabanı: güvenlik, RLS, iş kuralları + eş zamanlılık (PostgreSQL 15+ gerekir)
-PGHOST=localhost PGPORT=5432 PGUSER=postgres bash tests/db/run.sh
-
-# Bağımlılıksız birim testleri (Node 22.18+)
-node --test tests/unit/core.test.ts
+npm install
+npm run db:start            # yerel Supabase; migration'lar otomatik uygulanır, çıktıdaki anahtarları not alın
+cp .env.example .env.local  # değerleri doldurun (yerelde EMAIL_TEST_SINK_DIR açabilirsiniz)
+npm run dev
 ```
 
-`tests/db/00_supabase_shim.sql` yalnızca yerel test içindir (Supabase'in `auth.uid()`, `anon`, `authenticated`, `service_role` yapılarını taklit eder); Supabase'e uygulanmaz.
+Admin kullanıcısı: Supabase Studio veya `auth.admin.createUser` ile kullanıcı oluşturup SQL ile rol verin (aşağıda).
+
+## Testler
+
+| Komut | Ne test eder | Gerçek mi? |
+|---|---|---|
+| `npm test` | Token/QR, manuel kod, CSV enjeksiyonu, telefon normalize (Vitest) | Birim |
+| `npm run test:db` | 70 kontrol: RLS, yetkiler, durum geçişleri, idempotent onay, kapasite, check-in, e-posta kilidi, rate limit, saklama + **eş zamanlılık** (30 paralel onay, 20 paralel check-in). `PGHOST/PGPORT/PGUSER` gerekir | Gerçek PostgreSQL (16 ve Supabase 17'de geçti) |
+| `npm run build && npm run test:e2e` | 33 uçtan uca senaryo (Playwright, masaüstü + Pixel 7): form, doğrulama, mükerrer, ağ hatası, honeypot, köken, rate limit, yetkisiz erişim, rol ayrımı, onay → QR e-postası → davetiye sayfası, çift sekme idempotency, ret/yedek/iptal, tekrar gönder/yeniden üret, kapasite (6 eş zamanlı sekme), ayarlar, Resend hata senaryosu + tekrar dene, manuel ve **sahte kamera ile gerçek QR okutma**, 15 paralel check-in, kamera izni reddi, mobil düzen | Gerçek yerel Supabase (Auth + PostgREST + RLS) + üretim derlemesi |
+
+E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı URL'yi reddeder) ve verileri sıfırlar. Hata senaryosu için ikinci bir sunucu örneği **gerçek Resend API'sine geçersiz anahtarla** bağlanır.
+
+## Canlıya alma (Vercel + Supabase)
+
+### 1. Supabase
+1. Proje oluşturun (bölge: Frankfurt `eu-central-1` önerilir).
+2. Migration'ları uygulayın: `npx supabase link --project-ref <ref>` → `npx supabase db push` (veya `supabase/migrations/*.sql` dosyalarını sırayla SQL Editor'de çalıştırın).
+3. **Authentication → Sign In / Providers**: "Allow new users to sign up" **kapalı**; Email provider **açık** kalmalı (ekip e-posta+parola ile girer).
+4. **Authentication → URL Configuration**: Site URL = canlı alan adı.
+5. Ekip kullanıcılarını **Authentication → Users → Add user** ile oluşturun (güçlü parola, "Auto confirm"), ardından SQL Editor:
+   ```sql
+   insert into public.staff_members (user_id, role)
+   select id, 'admin' from auth.users where email = 'admin@alanadiniz.com';
+   -- Kapı ekibi: role = 'checkin' (yalnızca check-in ekranını görür)
+   ```
+
+### 2. Resend
+1. Domain ekleyin, DNS kayıtlarını (SPF, DKIM) girin, **doğrulanmasını bekleyin**.
+2. "Sending access" yetkili API anahtarı oluşturun.
+3. `EMAIL_FROM` bu doğrulanmış domain'den olmalı (ör. `ASUS Workshop <workshop@alanadiniz.com>`).
+
+### 3. Vercel
+1. Repoyu içe aktarın (framework otomatik: Next.js).
+2. Environment Variables (Production): `.env.example`'daki tüm değerler. `EMAIL_TEST_SINK_DIR` **eklemeyin**.
+   `INVITATION_TOKEN_SECRET`, `RATE_LIMIT_SALT`, `CRON_SECRET`: `openssl rand -base64 48`. `INVITATION_TOKEN_SECRET` sonradan değiştirilirse gönderilmiş QR'lar geçersiz olur.
+3. Deploy. `vercel.json` her gece 03:00 UTC'de `/api/cron/purge` ile saklama süresi dolan başvuruları siler.
+4. Alan adı bağlayın; `NEXT_PUBLIC_SITE_URL`'i güncelleyip yeniden deploy edin (QR bağlantıları buna göre üretilir).
+
+### 4. Canlı duman testi (yaklaşık 10 dk)
+1. Kendi e-postanızla başvurun → "başvurun alındı" e-postası geldi mi?
+2. Admin'den onaylayın → QR'lı davetiye geldi mi, QR görünüyor mu?
+3. Telefonda `/admin/check-in` açın (https şart) → QR'ı okutun → "Giriş onaylandı"; tekrar okutun → "daha önce yapılmış".
+4. Test başvurusunu Supabase'den silin, `event_settings`'i gerçek değerlerle doldurun.
+
+## İçeriği güncelleme
+
+- **Metinler, görseller, biyografi, sosyal bağlantılar, ürünler, iletişim**: `src/config/event.ts`. Görselleri `public/` altına koyup `src` alanına yolunu yazın; placeholder otomatik kalkar.
+- **Tarih, mekân, kapasite, başvuru açık/kapalı**: `/admin/ayarlar` (deploy gerektirmez). "Kesinleşti" işaretlenmedikçe sayfada ve e-postalarda gösterilmez.
+- **KVKK metinleri**: `src/app/kvkk/page.tsx`, `src/app/gizlilik/page.tsx`; onaylı metni ekleyince `eventContent.legal.kvkkNoticeApproved = true` yapın ve `/admin/ayarlar`'dan sürümü artırın.
 
 ## Hukuki not
 
-KVKK uyumu yalnızca yazılımla sağlanamaz. Aydınlatma metni, pazarlama izni metni, veri sorumlusu bilgileri ve saklama süresi (`event_settings.retention_days`, varsayılan 180 gün) hukuk danışmanınızdan alınmalıdır. Onaylı metinler gelene kadar formda **TASLAK** uyarısı gösterilir.
+KVKK uyumu yalnızca yazılımla sağlanamaz. Aydınlatma metni, pazarlama izni metni, veri sorumlusu bilgileri, yurt dışı aktarım (Supabase/Vercel/Resend) değerlendirmesi ve saklama süresi hukuk danışmanınızdan alınmalıdır.

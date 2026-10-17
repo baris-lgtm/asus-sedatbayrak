@@ -19,7 +19,7 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   if (!parsed.success) return { error: "E-posta ve parolanı yaz." };
 
   const ip = await clientIp();
-  if (!(await rateLimit(hashKey("login-ip", ip), 10, 600)) || !(await rateLimit(hashKey("login-email", parsed.data.email), 5, 600))) {
+  if (!(await rateLimit(hashKey("login-ip", ip), 30, 600)) || !(await rateLimit(hashKey("login-email", parsed.data.email), 5, 600))) {
     return { error: "Çok fazla deneme yapıldı. 10 dakika sonra tekrar dene." };
   }
 

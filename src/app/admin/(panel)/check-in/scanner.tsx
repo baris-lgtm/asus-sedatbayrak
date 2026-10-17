@@ -87,8 +87,14 @@ export function CheckInScanner() {
       const scanner = new QrScanner(videoRef.current, (r) => void submit("qr", r.data), {
         preferredCamera: "environment",
         returnDetailedScanResult: true,
-        highlightScanRegion: true,
         maxScansPerSecond: 5,
+        // Tüm kare taranır: QR kameraya çok yakın veya kenarda olsa da okunur.
+        calculateScanRegion: (v) => {
+          const w = v.videoWidth || 640;
+          const h = v.videoHeight || 480;
+          const scale = Math.min(1, 720 / Math.max(w, h));
+          return { x: 0, y: 0, width: w, height: h, downScaledWidth: Math.round(w * scale), downScaledHeight: Math.round(h * scale) };
+        },
       });
       scannerRef.current = scanner;
       await scanner.start();

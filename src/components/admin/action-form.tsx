@@ -1,12 +1,31 @@
 "use client";
 
-import { useActionState } from "react";
+import { createContext, useActionState, useContext, useState } from "react";
 import type { ActionState } from "@/app/admin/actions";
 
 /**
- * Tek bir admin işlemi için form. Sonuç mesajı aria-live ile duyurulur.
- * Geri alınması zor işlemlerde tarayıcı onayı istenir.
+ * İşlem sonucu, işlemi yapan buton işlemden sonra kaybolsa bile (ör. "İncelemeye al"
+ * sonrası) görünür kalsın diye ortak bir canlı bölgede gösterilir.
  */
+const FeedbackContext = createContext<((s: ActionState) => void) | null>(null);
+
+export function ActionFeedbackProvider({ children }: { children: React.ReactNode }) {
+  const [last, setLast] = useState<ActionState | null>(null);
+  return (
+    <FeedbackContext.Provider value={setLast}>
+      <div aria-live="polite" role="status">
+        {last?.message && (
+          <p className={`border-l-4 px-3 py-2 text-sm ${last.ok === false ? "border-err bg-red-50 font-medium text-err" : "border-ok bg-green-50 text-ok"}`}>
+            {last.message}
+          </p>
+        )}
+      </div>
+      {children}
+    </FeedbackContext.Provider>
+  );
+}
+
+/** Tek bir admin işlemi. Geri alınması zor işlemlerde tarayıcı onayı istenir. */
 export function ActionForm({
   action,
   fields,
@@ -24,7 +43,15 @@ export function ActionForm({
   variant?: "primary" | "secondary" | "danger";
   notifyOption?: string;
 }) {
-  const [state, formAction, pending] = useActionState(action, {});
+  const report = useContext(FeedbackContext);
+  // Sonuç, işlemin kendisiyle aynı geçişte (transition) bildirilir; buton yeni durumda
+  // kaybolsa bile mesaj ortak alanda görünür.
+  const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
+    const result = await action(prev, fd);
+    report?.(result);
+    return result;
+  }, {});
+
   const cls =
     variant === "primary"
       ? "btn btn-primary"
@@ -52,9 +79,11 @@ export function ActionForm({
       <button type="submit" className={`${cls} w-full min-h-11 text-sm`} disabled={pending} aria-busy={pending}>
         {pending ? (pendingLabel ?? "İşleniyor…") : label}
       </button>
-      <p aria-live="polite" className={`min-h-0 text-sm ${state.ok === false ? "font-medium text-err" : "text-ok"}`}>
-        {state.message}
-      </p>
+      {!report && state.message && (
+        <p aria-live="polite" className={`text-sm ${state.ok === false ? "font-medium text-err" : "text-ok"}`}>
+          {state.message}
+        </p>
+      )}
     </form>
   );
 }

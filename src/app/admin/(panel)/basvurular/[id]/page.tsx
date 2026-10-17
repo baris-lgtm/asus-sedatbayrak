@@ -5,7 +5,7 @@ import { requireAdminPage } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 import { EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, type Application, type EmailLog, type Invitation } from "@/lib/types";
 import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
-import { ActionForm } from "@/components/admin/action-form";
+import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
 import {
   approveAction,
   reissueInvitationAction,
@@ -77,7 +77,8 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
         <StatusBadge status={s} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <ActionFeedbackProvider>
+      <div className="mt-4 grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <section aria-labelledby="bilgiler" className="border border-rule bg-paper p-5">
             <h2 id="bilgiler" className="text-lg font-bold">Başvuru bilgileri</h2>
@@ -214,6 +215,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
           )}
         </aside>
       </div>
+      </ActionFeedbackProvider>
     </div>
   );
 }
