@@ -1,6 +1,5 @@
-// Bağımlılıksız birim testleri (Node yerleşik test koşucusu).
-// Çalıştırma: node --test tests/unit/
-import { test } from "node:test";
+// Çekirdek yardımcıların birim testleri. Çalıştırma: npm test
+import { test } from "vitest";
 import assert from "node:assert/strict";
 import {
   deriveManualCode,
@@ -12,9 +11,9 @@ import {
   materialFor,
   normalizeManualCode,
   sha256Hex,
-} from "../../src/lib/server/invitation-token.ts";
-import { sanitizeCsvCell, toCsv } from "../../src/lib/csv.ts";
-import { normalizePhone } from "../../src/lib/phone.ts";
+} from "../../src/lib/server/invitation-token";
+import { sanitizeCsvCell, toCsv } from "../../src/lib/csv";
+import { normalizePhone } from "../../src/lib/phone";
 
 const SECRET = "test-secret-test-secret-test-secret-123456";
 
