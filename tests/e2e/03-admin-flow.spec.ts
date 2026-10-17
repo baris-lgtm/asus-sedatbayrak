@@ -225,3 +225,86 @@ test("T10: e-posta sağlayıcısı hata verirse başvuru korunur, hata loglanır
   const { data: after } = await service().from("email_logs").select("status, attempt_count").eq("application_id", app!.id).single();
   expect(after).toMatchObject({ status: "sent", attempt_count: 2 });
 });
+
+test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
+  test.beforeEach(async ({ page }) => {
+    page.on("dialog", (d) => d.accept());
+    await uiLogin(page, USERS.admin);
+  });
+
+  test("admin başvuruyu KVKK talebiyle kalıcı silebilir; davetiye QR'ı geçersizleşir", async ({ page }) => {
+    const a = await seedApplication({ first_name: "Silinecek" });
+    await openApplication(page, a.id);
+    await page.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+    await expect(page.getByText(/onaylandı/).first()).toBeVisible();
+    const { url } = invitationFromMail(mailsTo(a.email, "invitation")[0]);
+
+    await page.reload();
+    await page.getByRole("button", { name: "Başvuruyu kalıcı olarak sil" }).click();
+    await expect(page.getByText("Silmeyi onaylamak için kutuya SIL yaz.")).toBeVisible();
+    await page.getByLabel(/Onaylamak için/).fill("SIL");
+    await page.getByRole("button", { name: "Başvuruyu kalıcı olarak sil" }).click();
+    await expect(page).toHaveURL(/\/admin\?silindi=1$/);
+    await expect(page.getByText("Başvuru ve ilişkili tüm kayıtlar kalıcı olarak silindi.")).toBeVisible();
+
+    for (const table of ["applications", "invitations", "email_logs"]) {
+      const col = table === "applications" ? "id" : "application_id";
+      const { count } = await service().from(table).select("*", { count: "exact", head: true }).eq(col, a.id);
+      expect(count, table).toBe(0);
+    }
+    const res = await page.goto(new URL(url).pathname);
+    expect(res?.status()).toBe(404);
+  });
+
+  test("tarih/mekân kesinleşince onaylı katılımcılar bir kez bilgilendirilir", async ({ page }) => {
+    test.setTimeout(240_000);
+    const early = await seedApplication({ first_name: "Erken" });
+    await openApplication(page, early.id);
+    await page.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+    await expect(page.getByText(/onaylandı/).first()).toBeVisible();
+    expect(mailsTo(early.email, "invitation")[0].text).toContain("Tarih: Kesinleştiğinde e-posta ile bildirilecek");
+
+    // Henüz kesinleşmemişken gönderim yapılamaz
+    await page.goto("/admin/ayarlar");
+    await expect(page.getByText("Önce tarihi veya mekânı yukarıdan kesinleşmiş olarak kaydet.")).toBeVisible();
+
+    await page.getByLabel("Başlangıç (İstanbul saati)").fill("2026-10-31T12:00");
+    await page.getByLabel("Bitiş (İstanbul saati)").fill("2026-10-31T17:00");
+    await page.getByRole("checkbox", { name: /Tarih kesinleşti/ }).check();
+    await page.getByRole("button", { name: "Ayarları kaydet" }).click();
+    await expect(page.getByText("Ayarlar kaydedildi.")).toBeVisible();
+    await page.reload();
+
+    try {
+      // Bütün onaylı katılımcılar bilgilenene kadar (25'erli turlar)
+      for (let round = 0; round < 10; round++) {
+        const button = page.getByRole("button", { name: /Bilgilendirme gönder/ });
+        if ((await button.count()) === 0) break;
+        await button.click();
+        await expect(page.getByText(/katılımcıya gönderildi|tamamına gönderildi/)).toBeVisible({ timeout: 60_000 });
+        await page.reload();
+      }
+      await expect(page.getByText(/onaylı katılımcı bilgilendirildi/)).toBeVisible();
+      await expect(page.getByRole("button", { name: /Bilgilendirme gönder/ })).toHaveCount(0);
+
+      const updates = mailsTo(early.email, "event_update");
+      expect(updates).toHaveLength(1);
+      expect(updates[0].text).toContain("31 Ekim 2026 Cumartesi");
+      expect(updates[0].attachments[0]).toMatchObject({ contentId: "davetiye-qr" });
+      // QR değişmedi
+      expect(invitationFromMail(updates[0]).token).toBe(invitationFromMail(mailsTo(early.email, "invitation")[0]).token);
+
+      // Kesinleşmeden SONRA onaylanan kişi zaten güncel bilgiyle davetiye aldığı için bekleyen sayılmaz
+      const late = await seedApplication({ first_name: "Gec" });
+      await openApplication(page, late.id);
+      await page.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+      await expect(page.getByText(/onaylandı/).first()).toBeVisible();
+      expect(mailsTo(late.email, "invitation")[0].text).toContain("31 Ekim 2026 Cumartesi");
+      await page.goto("/admin/ayarlar");
+      await expect(page.getByRole("button", { name: /Bilgilendirme gönder/ })).toHaveCount(0);
+      expect(mailsTo(late.email, "event_update")).toHaveLength(0);
+    } finally {
+      await service().from("event_settings").update({ date_confirmed: false, starts_at: null, ends_at: null }).eq("id", 1);
+    }
+  });
+});

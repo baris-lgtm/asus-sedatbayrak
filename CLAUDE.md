@@ -12,6 +12,7 @@ npm run build          # üretim derlemesi (TypeScript dahil)
 npm test               # birim testleri (Vitest)
 npm run test:db        # DB testleri — PGHOST/PGPORT/PGUSER(/PGPASSWORD) gerekir
 npm run db:start       # yerel Supabase (Docker); migration'ları uygular
+npm run staff:add -- <e-posta> <admin|checkin>   # ekip kullanıcısı ekle / rol güncelle
 npm run build && npm run test:e2e   # 33 uçtan uca test — yalnızca YEREL Supabase'e karşı, verileri sıfırlar
 ```
 Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=54322 PGUSER=postgres npm run test:db`
@@ -42,9 +43,9 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Kamera yalnızca https (veya localhost) üzerinde çalışır.
 
 ## Durum (17 Ekim 2026)
-Tüm özellikler tamam; 70 DB + 9 birim + 33 E2E testi geçiyor; `next build` temiz.
+Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 78 DB + 9 birim + 37 E2E testi geçiyor; `next build` temiz.
 **Sıradaki iş: canlıya alma** (README → "Canlıya alma"):
-1. Supabase projesi (Frankfurt) → `npx supabase link --project-ref <ref>` → `npx supabase db push` → sign-up kapat → admin kullanıcı + `staff_members` satırı.
+1. Supabase projesi (Frankfurt) → `npx supabase link --project-ref <ref>` → `npx supabase db push` → sign-up kapat → `npm run staff:add -- <e-posta> admin`.
 2. GitHub reposu → Vercel'e import → ortam değişkenleri (`.env.example`) → Functions bölgesi `fra1`.
 3. Resend domain doğrulama → `RESEND_API_KEY`, `EMAIL_FROM`.
 4. Alan adı → `NEXT_PUBLIC_SITE_URL` güncelle + redeploy → Supabase Site URL.

@@ -13,8 +13,8 @@ Gerçek başvuru alan, admin onayıyla katılımcı kabul eden, QR kodlu davetiy
 | `/davetiye/<token>` | Davetiye sahibi | QR + giriş kodu (QR'ını kaybedenler için) |
 | `/admin/login` | Ekip | Giriş |
 | `/admin` | admin | Dashboard, arama, filtre, sıralama, sayfalama, CSV |
-| `/admin/basvurular/<id>` | admin | Detay, onay/ret/yedek/iptal, davetiye tekrar gönder/yeniden üret, e-posta logları + tekrar dene |
-| `/admin/ayarlar` | admin | Tarih, mekân, kapasite, başvuru açık/kapalı, KVKK sürümü, saklama süresi |
+| `/admin/basvurular/<id>` | admin | Detay, onay/ret/yedek/iptal, davetiye tekrar gönder/yeniden üret, e-posta logları + tekrar dene, KVKK talebiyle kalıcı silme |
+| `/admin/ayarlar` | admin | Tarih, mekân, kapasite, başvuru açık/kapalı, KVKK sürümü, saklama süresi; tarih/mekân kesinleşince onaylı katılımcılara toplu bilgilendirme (25'erli turlar, kişi başı tek e-posta) |
 | `/admin/check-in` | admin, checkin | Kamera ile QR okutma + manuel kod |
 
 ## Güvenlik mimarisi (özet)
@@ -45,8 +45,8 @@ Admin kullanıcısı: Supabase Studio veya `auth.admin.createUser` ile kullanıc
 | Komut | Ne test eder | Gerçek mi? |
 |---|---|---|
 | `npm test` | Token/QR, manuel kod, CSV enjeksiyonu, telefon normalize (Vitest) | Birim |
-| `npm run test:db` | 70 kontrol: RLS, yetkiler, durum geçişleri, idempotent onay, kapasite, check-in, e-posta kilidi, rate limit, saklama + **eş zamanlılık** (30 paralel onay, 20 paralel check-in). `PGHOST/PGPORT/PGUSER` gerekir | Gerçek PostgreSQL (16 ve Supabase 17'de geçti) |
-| `npm run build && npm run test:e2e` | 33 uçtan uca senaryo (Playwright, masaüstü + Pixel 7): form, doğrulama, mükerrer, ağ hatası, honeypot, köken, rate limit, yetkisiz erişim, rol ayrımı, onay → QR e-postası → davetiye sayfası, çift sekme idempotency, ret/yedek/iptal, tekrar gönder/yeniden üret, kapasite (6 eş zamanlı sekme), ayarlar, Resend hata senaryosu + tekrar dene, manuel ve **sahte kamera ile gerçek QR okutma**, 15 paralel check-in, kamera izni reddi, mobil düzen | Gerçek yerel Supabase (Auth + PostgREST + RLS) + üretim derlemesi |
+| `npm run test:db` | 78 kontrol: RLS, yetkiler, durum geçişleri, KVKK silme, idempotent onay, kapasite, check-in, e-posta kilidi, rate limit, saklama + **eş zamanlılık** (30 paralel onay, 20 paralel check-in). `PGHOST/PGPORT/PGUSER` gerekir | Gerçek PostgreSQL (16 ve Supabase 17'de geçti) |
+| `npm run build && npm run test:e2e` | 37 uçtan uca senaryo (Playwright, masaüstü + Pixel 7): form, doğrulama, mükerrer, ağ hatası, honeypot, köken, rate limit, yetkisiz erişim, rol ayrımı, onay → QR e-postası → davetiye sayfası, çift sekme idempotency, ret/yedek/iptal, tekrar gönder/yeniden üret, kapasite (6 eş zamanlı sekme), ayarlar, toplu bilgilendirme, KVKK silme, ekip ekleme komutu, paylaşım görseli, Resend hata senaryosu + tekrar dene, manuel ve **sahte kamera ile gerçek QR okutma**, 15 paralel check-in, kamera izni reddi, mobil düzen | Gerçek yerel Supabase (Auth + PostgREST + RLS) + üretim derlemesi |
 
 E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı URL'yi reddeder) ve verileri sıfırlar. Hata senaryosu için ikinci bir sunucu örneği **gerçek Resend API'sine geçersiz anahtarla** bağlanır.
 
@@ -57,12 +57,12 @@ E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı
 2. Migration'ları uygulayın: `npx supabase link --project-ref <ref>` → `npx supabase db push` (veya `supabase/migrations/*.sql` dosyalarını sırayla SQL Editor'de çalıştırın).
 3. **Authentication → Sign In / Providers**: "Allow new users to sign up" **kapalı**; Email provider **açık** kalmalı (ekip e-posta+parola ile girer).
 4. **Authentication → URL Configuration**: Site URL = canlı alan adı.
-5. Ekip kullanıcılarını **Authentication → Users → Add user** ile oluşturun (güçlü parola, "Auto confirm"), ardından SQL Editor:
-   ```sql
-   insert into public.staff_members (user_id, role)
-   select id, 'admin' from auth.users where email = 'admin@alanadiniz.com';
-   -- Kapı ekibi: role = 'checkin' (yalnızca check-in ekranını görür)
+5. Ekip kullanıcılarını ekleyin (`.env.local` canlı Supabase anahtarlarını içermeli):
+   ```bash
+   npm run staff:add -- admin@alanadiniz.com admin
+   npm run staff:add -- kapi1@alanadiniz.com checkin   # yalnızca check-in ekranını görür
    ```
+   Komut geçici parolayı bir kez yazar; kişiye güvenli kanaldan iletin. Alternatif: Supabase'de Authentication → Users → Add user, ardından SQL Editor'de `insert into public.staff_members (user_id, role) select id, 'admin' from auth.users where email = '…';`
 
 ### 2. Resend
 1. Domain ekleyin, DNS kayıtlarını (SPF, DKIM) girin, **doğrulanmasını bekleyin**.
@@ -81,6 +81,14 @@ E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı
 2. Admin'den onaylayın → QR'lı davetiye geldi mi, QR görünüyor mu?
 3. Telefonda `/admin/check-in` açın (https şart) → QR'ı okutun → "Giriş onaylandı"; tekrar okutun → "daha önce yapılmış".
 4. Test başvurusunu Supabase'den silin, `event_settings`'i gerçek değerlerle doldurun.
+
+## Etkinlik öncesi akış
+
+1. Tarih/mekân kesinleşince `/admin/ayarlar`'da girin ve "kesinleşti" kutularını işaretleyin.
+2. Aynı sayfadaki **Onaylı katılımcıları bilgilendir** bölümünden güncelleme e-postasını gönderin (davetiye QR'ı dahil; kodlar değişmez).
+3. Etkinlik günü kapı ekibi telefonundan `/admin/check-in` açar.
+
+KVKK silme talebi gelirse: başvuru detayında **Başvuruyu kalıcı olarak sil** (onay için `SIL` yazılır). Saklama süresi dolan başvurular her gece otomatik silinir.
 
 ## İçeriği güncelleme
 

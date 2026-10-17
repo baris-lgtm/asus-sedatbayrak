@@ -286,4 +286,32 @@ update public.applications set created_at = now() - interval '400 days' where em
 select tests.ok((select public.purge_expired_applications() = 1), 'saklama süresi geçen başvuru silindi');
 reset role;
 
+\echo '--- 16. KVKK kalıcı silme ve bilgi güncellemesi e-posta türü'
+set role service_role;
+select tests.apply('silinecek@example.com');
+select public.claim_email((select id from public.applications where email='silinecek@example.com'), 'event_update', 'event_update:test:v1');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error(format($$select public.admin_delete_application(%L)$$,
+                                 (select id from public.applications where email='pazar@example.com')),
+                          'ERR_FORBIDDEN|permission denied', 'kapı ekibi başvuru silemez');
+reset role;
+set role anon;
+select tests.logout();
+select tests.expect_error($$select public.admin_delete_application(gen_random_uuid())$$, 'permission denied', 'anon başvuru silemez');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+-- onaylı + davetiyeli başvuruyu sil (pazar@ → davetiye 2222...)
+select tests.ok((public.admin_delete_application((select id from public.applications where email='pazar@example.com'))->>'deleted')::boolean,
+                'admin başvuruyu kalıcı olarak sildi');
+reset role;
+select tests.ok((select count(*) = 0 from public.applications where email='pazar@example.com'), 'başvuru silindi');
+select tests.ok((select count(*) = 0 from public.invitations where id='22222222-2222-2222-2222-222222222222'), 'davetiyesi de silindi (cascade)');
+select tests.ok((select count(*) = 0 from public.email_logs where dedupe_key='invitation:22222222-2222-2222-2222-222222222222'), 'e-posta kayıtları da silindi');
+select tests.ok((select count(*) = 1 from public.admin_audit_logs where action='delete_application'
+                   and metadata::text not like '%@%' and application_id is null), 'denetim kaydı var ve kişisel veri içermiyor');
+select tests.ok((select count(*) = 1 from public.email_logs where email_type='event_update'), 'event_update e-posta türü kullanılabiliyor');
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

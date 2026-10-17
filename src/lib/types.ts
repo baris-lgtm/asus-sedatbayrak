@@ -35,7 +35,8 @@ export type EmailType =
   | "invitation_resend"
   | "waitlisted"
   | "rejected"
-  | "cancelled";
+  | "cancelled"
+  | "event_update";
 
 export const EMAIL_TYPE_LABELS: Record<EmailType, string> = {
   application_received: "Başvuru alındı",
@@ -44,6 +45,7 @@ export const EMAIL_TYPE_LABELS: Record<EmailType, string> = {
   waitlisted: "Yedek liste",
   rejected: "Ret",
   cancelled: "İptal",
+  event_update: "Tarih/mekân güncellemesi",
 };
 
 export type EmailStatus = "pending" | "sending" | "sent" | "failed" | "skipped";

@@ -8,13 +8,16 @@
  *  3. E-posta sonucunu kullanıcıya açıkça bildirir.
  */
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { AuthorizationError, requireAdmin } from "@/lib/auth";
 import { dbErrorMessage } from "@/lib/db-errors";
 import { requireEnv, ConfigError } from "@/lib/env";
 import { issueInvitation } from "@/lib/server/invitation-token";
 import { describeOutcome, sendTransactional, type SendOutcome } from "@/lib/email/send";
-import { buildEmail, sendInvitation, sendStatusNotice } from "@/lib/email/notifications";
+import { buildEmail, sendEventUpdate, sendInvitation, sendStatusNotice } from "@/lib/email/notifications";
+import { pendingUpdateTargets } from "@/lib/admin/event-update";
+import { getEventSettings } from "@/lib/event-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fromIstanbulLocalInput } from "@/lib/format";
 import type { Application, EmailLog } from "@/lib/types";
@@ -285,6 +288,81 @@ export async function updateSettingsAction(_prev: ActionState, formData: FormDat
     });
     revalidatePath("/", "layout");
     return { ok: true, message: "Ayarlar kaydedildi. Ana sayfa güncellendi." };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/**
+ * KVKK silme talebi: başvuruyu, davetiyesini ve e-posta kayıtlarını kalıcı siler.
+ * Geri alınamaz; denetim kaydında yalnızca kayıt kimliği kalır.
+ */
+export async function deleteApplicationAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const admin = await requireAdmin();
+    const id = uuid.safeParse(formData.get("id"));
+    if (!id.success) return { ok: false, message: "Geçersiz istek." };
+    if (formData.get("confirm") !== "SIL") return { ok: false, message: "Silmeyi onaylamak için kutuya SIL yaz." };
+    const { error } = await admin.supabase.rpc("admin_delete_application", { p_application_id: id.data });
+    if (error) return { ok: false, message: dbErrorMessage(error) };
+    revalidatePath("/admin", "layout");
+  } catch (e) {
+    return fail(e);
+  }
+  redirect("/admin?silindi=1");
+}
+
+const UPDATE_BATCH = 25;
+const RESEND_SPACING_MS = 550; // Resend'in varsayılan hız sınırının (saniyede ~2 istek) altında kalmak için
+
+/**
+ * Tarih/mekân kesinleşince onaylı katılımcılara güncel bilgiyi (ve davetiyelerini)
+ * gönderir. Her çağrıda en fazla 25 kişi işlenir; kalan varsa admin tekrar basar.
+ * Aynı bilgi sürümü için kimseye iki kez gönderilmez.
+ */
+export async function sendEventUpdatesAction(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  try {
+    const admin = await requireAdmin();
+    const settings = await getEventSettings();
+    if (!settings.date_confirmed && !settings.venue_confirmed) {
+      return { ok: false, message: "Önce tarihi veya mekânı kesinleşmiş olarak kaydet." };
+    }
+    const { total, pending, version } = await pendingUpdateTargets(admin.supabase, settings);
+    if (total === 0) return { ok: false, message: "Henüz onaylı katılımcı yok." };
+    if (pending.length === 0) return { ok: true, message: `Güncel bilgi ${total} katılımcının tamamına gönderildi.` };
+
+    const db = createAdminClient();
+    const batch = pending.slice(0, UPDATE_BATCH);
+    const { data: apps } = await db
+      .from("applications")
+      .select("id, first_name, email")
+      .in("id", batch.map((b) => b.applicationId))
+      .returns<Pick<Application, "id" | "first_name" | "email">[]>();
+    const byId = new Map((apps ?? []).map((a) => [a.id, a]));
+
+    let sent = 0;
+    let failed = 0;
+    for (const [i, t] of batch.entries()) {
+      const app = byId.get(t.applicationId);
+      if (!app) continue;
+      if (i > 0) await new Promise((r) => setTimeout(r, RESEND_SPACING_MS));
+      const outcome = await sendEventUpdate(app, t.invitationId, version);
+      if (outcome.status === "sent" || outcome.status === "duplicate") sent += 1;
+      else failed += 1;
+    }
+
+    await db.from("admin_audit_logs").insert({
+      admin_user_id: admin.userId,
+      action: "send_event_update",
+      metadata: { version, sent, failed, remaining: pending.length - batch.length },
+    });
+    revalidatePath("/admin", "layout");
+
+    const remaining = pending.length - sent;
+    const parts = [`${sent} katılımcıya gönderildi.`];
+    if (failed) parts.push(`${failed} gönderim başarısız (başvuru detaylarından tekrar denenebilir).`);
+    parts.push(remaining > 0 ? `Kalan: ${remaining}. Devam etmek için tekrar bas.` : "Tüm onaylı katılımcılar bilgilendirildi.");
+    return { ok: failed === 0, message: parts.join(" ") };
   } catch (e) {
     return fail(e);
   }

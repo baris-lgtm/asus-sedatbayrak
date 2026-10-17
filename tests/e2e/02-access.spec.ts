@@ -81,3 +81,26 @@ test("herkese açık kayıt (sign-up) kapalı: kimse kendine hesap açamaz", asy
   const { error } = await anon().auth.signUp({ email: `saldirgan.${Date.now()}@example.com`, password: "Guclu-Parola-123!" });
   expect(error?.message ?? "").toMatch(/signups? not allowed|disabled/i);
 });
+
+test("ekip ekleme komutu: kullanıcı oluşturur, rol verir, verilen parolayla giriş yapılır", async ({ page }) => {
+  const { execFileSync } = await import("node:child_process");
+  const email = `yeni.ekip.${Date.now()}@test.local`;
+  const out = execFileSync("node", ["scripts/add-staff.mjs", email, "checkin"], { encoding: "utf8" });
+  expect(out).toContain(`${email} → checkin`);
+  const password = out.match(/Geçici parola[^:]*: (\S+)/)?.[1];
+  expect(password).toBeTruthy();
+  await uiLogin(page, { email, password: password! });
+  await expect(page).toHaveURL(/\/admin\/check-in$/);
+  // Tekrar çalıştırmak rolü günceller, yeni kullanıcı açmaz
+  const again = execFileSync("node", ["scripts/add-staff.mjs", email, "admin"], { encoding: "utf8" });
+  expect(again).toContain("yalnızca rolü güncellendi");
+});
+
+test("paylaşım görseli ve site ikonu", async ({ request, page }) => {
+  const og = await request.get("/opengraph-image");
+  expect(og.status()).toBe(200);
+  expect(og.headers()["content-type"]).toContain("image/png");
+  await page.goto("/");
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+  await expect(page.locator('link[rel="icon"]').first()).toHaveAttribute("href", /icon/);
+});

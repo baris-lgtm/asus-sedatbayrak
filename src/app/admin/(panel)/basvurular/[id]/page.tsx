@@ -6,6 +6,7 @@ import { formatDateTime } from "@/lib/format";
 import { EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, type Application, type EmailLog, type Invitation } from "@/lib/types";
 import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
+import { DeleteApplicationForm } from "@/components/admin/delete-form";
 import {
   approveAction,
   reissueInvitationAction,
@@ -211,8 +212,9 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
             />
           )}
           {(s === "checked_in" || s === "cancelled") && (
-            <p className="text-sm text-graphite">Bu başvuru için yapılabilecek işlem yok.</p>
+            <p className="text-sm text-graphite">Bu başvurunun durumu artık değiştirilemez.</p>
           )}
+          <DeleteApplicationForm id={id} />
         </aside>
       </div>
       </ActionFeedbackProvider>

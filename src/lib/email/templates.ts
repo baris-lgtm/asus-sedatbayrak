@@ -95,14 +95,17 @@ export function invitationEmail(opts: {
   invitationUrl: string;
   manualCode: string;
   qrContentId: string;
-  isResend: boolean;
+  /** initial: onay · resend: tekrar gönderim · update: tarih/mekân bilgisi güncellendi */
+  mode: "initial" | "resend" | "update";
 }): EmailContent {
-  const { firstName, settings: s, invitationUrl, manualCode, qrContentId, isResend } = opts;
+  const { firstName, settings: s, invitationUrl, manualCode, qrContentId, mode } = opts;
   const details = eventDetails(s);
-  const title = isResend ? "Davetiyen (yeniden gönderim)" : "Başvurun onaylandı";
-  const intro = isResend
-    ? "İsteğin üzerine davetiyeni yeniden gönderiyoruz. QR kodun ve giriş kodun değişmedi."
-    : `${s.event_name} için başvurun onaylandı. Katılımın kesinleşti; aşağıdaki QR kod senin kişisel davetiyendir.`;
+  const title = { initial: "Başvurun onaylandı", resend: "Davetiyen (yeniden gönderim)", update: "Etkinlik bilgileri güncellendi" }[mode];
+  const intro = {
+    initial: `${s.event_name} için başvurun onaylandı. Katılımın kesinleşti; aşağıdaki QR kod senin kişisel davetiyendir.`,
+    resend: "İsteğin üzerine davetiyeni yeniden gönderiyoruz. QR kodun ve giriş kodun değişmedi.",
+    update: `${s.event_name} için güncel tarih ve mekân bilgileri aşağıda. Davetiyen ve QR kodun değişmedi; girişte aynı kodu okutman yeterli.`,
+  }[mode];
   const html = layout({
     preheader: "QR kodlu davetiyen ekte. Girişte bu kodu okutman yeterli.",
     title,
@@ -127,7 +130,8 @@ ${p("Katılamayacaksan bu e-postayı yanıtlayarak bize haber ver; yerin yedek l
     `Giriş kodun (QR okutulamazsa): ${manualCode}`,
     "Bu davetiye kişiye özeldir ve yalnızca bir kez giriş için kullanılabilir.",
   ].join("\n\n");
-  return { subject: `${s.event_name} — davetiyen`, html, text };
+  const subject = mode === "update" ? `${s.event_name} — tarih ve mekân bilgisi` : `${s.event_name} — davetiyen`;
+  return { subject, html, text };
 }
 
 export function statusEmail(kind: "waitlisted" | "rejected" | "cancelled", firstName: string, s: EventSettings): EmailContent {

@@ -55,7 +55,7 @@ export async function sendInvitation(
       invitationUrl: url,
       manualCode: formatManualCode(manualCode),
       qrContentId: contentId,
-      isResend: mode === "resend",
+      mode,
     }),
     attachments: [{ filename: "davetiye-qr.png", content: await qrPng(url), contentType: "image/png", contentId }],
   });
@@ -91,7 +91,8 @@ export async function buildEmail(
     case "cancelled":
       return { content: statusEmail(type, app.first_name, settings) };
     case "invitation":
-    case "invitation_resend": {
+    case "invitation_resend":
+    case "event_update": {
       if (!invitationId) throw new Error("Davetiye kimliği eksik");
       const { qrToken, manualCode } = materialFor(invitationId, requireEnv("INVITATION_TOKEN_SECRET"));
       const url = invitationUrl(siteUrl(), qrToken);
@@ -103,10 +104,27 @@ export async function buildEmail(
           invitationUrl: url,
           manualCode: formatManualCode(manualCode),
           qrContentId: contentId,
-          isResend: type === "invitation_resend",
+          mode: type === "invitation_resend" ? "resend" : type === "event_update" ? "update" : "initial",
         }),
         attachments: [{ filename: "davetiye-qr.png", content: await qrPng(url), contentType: "image/png", contentId }],
       };
     }
   }
+}
+
+/**
+ * Tarih/mekân bilgisi değiştiğinde onaylı katılımcıya bilgilendirme (davetiye QR'ı dahil).
+ * dedupe: "event_update:<başvuru>:<ayar sürümü>" → aynı sürüm için kişi başı tek e-posta.
+ */
+export async function sendEventUpdate(app: Recipient, invitationId: string, version: string): Promise<SendOutcome> {
+  const built = await buildEmail("event_update", app, invitationId);
+  return sendTransactional({
+    applicationId: app.id,
+    invitationId,
+    type: "event_update",
+    dedupeKey: `event_update:${app.id}:${version}`,
+    to: app.email,
+    content: built.content,
+    attachments: built.attachments,
+  });
 }

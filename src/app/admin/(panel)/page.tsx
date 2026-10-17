@@ -7,7 +7,9 @@ import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const admin = await requireAdminPage();
-  const params = parseListParams(await searchParams);
+  const rawParams = await searchParams;
+  const params = parseListParams(rawParams);
+  const deleted = rawParams.silindi === "1";
 
   const [{ data: statsData }, list] = await Promise.all([
     admin.supabase.rpc("admin_stats"),
@@ -38,6 +40,11 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
   return (
     <div className="space-y-8">
+      {deleted && (
+        <p role="status" className="border-l-4 border-ok bg-green-50 px-3 py-2 text-sm text-ok">
+          Başvuru ve ilişkili tüm kayıtlar kalıcı olarak silindi.
+        </p>
+      )}
       <section aria-labelledby="ozet">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h1 id="ozet" className="display text-4xl">Başvurular</h1>

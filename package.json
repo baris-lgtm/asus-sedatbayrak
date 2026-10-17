@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:db": "bash tests/db/run.sh",
     "test:e2e": "playwright test",
-    "db:start": "supabase start -x storage-api,realtime,studio,edge-runtime,logflare,vector,imgproxy,postgres-meta,supavisor,mailpit"
+    "db:start": "supabase start -x storage-api,realtime,studio,edge-runtime,logflare,vector,imgproxy,postgres-meta,supavisor,mailpit",
+    "staff:add": "node scripts/add-staff.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.2",
