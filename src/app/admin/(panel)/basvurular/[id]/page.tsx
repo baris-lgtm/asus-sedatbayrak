@@ -36,7 +36,7 @@ function backHref(geri: string | string[] | undefined): string {
   if (!raw) return "/admin";
   const src = new URLSearchParams(raw);
   const out = new URLSearchParams();
-  for (const k of ["q", "status", "sort", "page"]) {
+  for (const k of ["q", "status", "sort", "page", "eposta"]) {
     const v = src.get(k);
     if (v) out.set(k, v.slice(0, 80));
   }
@@ -198,7 +198,7 @@ export default async function ApplicationDetail({
           </section>
         </div>
 
-        <aside aria-labelledby="islemler" className="h-fit space-y-5 border-2 border-ink bg-paper p-5 lg:sticky lg:top-6">
+        <aside aria-labelledby="islemler" className="order-first h-fit space-y-5 border-2 border-ink bg-paper p-5 lg:order-none lg:sticky lg:top-6">
           <h2 id="islemler" className="text-lg font-bold">İşlemler</h2>
           {canApprove && (
             <ActionForm

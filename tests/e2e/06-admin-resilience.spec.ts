@@ -198,6 +198,32 @@ test.describe("Admin paneli dayanıklılık", () => {
     expect(mailsTo(a.email, "invitation").length).toBeGreaterThanOrEqual(2);
   });
 
+  test("başarısız e-postalar panelden bulunabilir", async ({ page }) => {
+    const a = await seedApplication({ first_name: "Basarisiz", last_name: `Eposta${Date.now()}` });
+    await service().from("email_logs").insert({ application_id: a.id, email_type: "application_received", dedupe_key: `received:${a.id}`, status: "failed", attempt_count: 1, last_error: "test" });
+    await page.goto("/admin");
+    await page.getByRole("link", { name: /Başarısız e-postaları göster/ }).click();
+    await expect(page).toHaveURL(/eposta=basarisiz/);
+    await expect(page.getByText("Yalnızca başarısız e-postası olan başvurular gösteriliyor.")).toBeVisible();
+    await expect(page.getByRole("link", { name: new RegExp(`Basarisiz Eposta`) }).first()).toBeVisible();
+    // Tekrar dene sonrası listeden çıkar
+    await page.getByRole("link", { name: new RegExp(`Basarisiz Eposta`) }).first().click();
+    await page.getByRole("button", { name: "Tekrar dene" }).click();
+    await expect(page.getByText("E-posta gönderildi.")).toBeVisible();
+    await page.getByRole("link", { name: "Başvurulara dön" }).click();
+    await expect(page).toHaveURL(/eposta=basarisiz/);
+    await expect(page.getByRole("link", { name: new RegExp(`Basarisiz Eposta`) })).toHaveCount(0);
+  });
+
+  test("mobilde işlemler paneli bilgilerden önce gelir", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const a = await seedApplication({ first_name: "Mobil" });
+    await openApplication(page, a.id);
+    const actions = await page.getByRole("heading", { name: "İşlemler" }).boundingBox();
+    const info = await page.getByRole("heading", { name: "Başvuru bilgileri" }).boundingBox();
+    expect(actions!.y).toBeLessThan(info!.y);
+  });
+
   test("detay sayfası: etiketler ve işlem geçmişi okunaklı", async ({ page }) => {
     const a = await seedApplication({ first_name: "Etiket" });
     await openApplication(page, a.id);

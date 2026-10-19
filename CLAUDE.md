@@ -37,13 +37,17 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - `tests/e2e/` — Playwright; `EMAIL_TEST_SINK_DIR` ile e-postalar diske yazılır (yalnızca localhost'ta etkin).
 
 ## Bilinen tuzaklar
+- Supabase istemcileri `src/lib/supabase/fetch.ts` üzerinden çalışır: zaman aşımı + `cache: "no-store"`. Admin/e-posta yolunda Next veri önbelleği KULLANILMAZ (eski ayarla e-posta gitmesin). Yalnızca herkese açık sayfalar `getEventSettings()` ile 60 sn önbellekli okur; e-postalar `getEventSettingsStrict()`.
+- Arama `applications.search_text` (tr_fold) sütununda; `trFold()` (TS) ile `public.tr_fold()` (SQL) birebir aynı kalmalı.
+- error.tsx'te `retry()` kullan (sunucudan yeniden çeker); `reset()` çekmez.
+- Testlerde `page.reload()` sonrası `count()` kullanmadan önce sayfanın akışının bittiğini bir metinle bekle (loading.tsx streaming).
 - Supabase'de "Allow new users to sign up" KAPALI olmalı ama **Email provider açık** kalmalı (yerelde `config.toml`: `[auth] enable_signup=false`, `[auth.email] enable_signup=true`).
 - `NEXT_PUBLIC_*` değişkenleri derleme anında gömülür → değiştirince yeniden deploy.
 - `INVITATION_TOKEN_SECRET` değişirse gönderilmiş tüm QR'lar geçersiz olur.
 - Kamera yalnızca https (veya localhost) üzerinde çalışır.
 
 ## Durum (17 Ekim 2026)
-Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 78 DB + 9 birim + 37 E2E testi geçiyor; `next build` temiz.
+Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 90 DB + 13 birim + 54 E2E testi geçiyor (admin paneli iki bağımsız incelemeden geçti); `next build` temiz.
 **Sıradaki iş: canlıya alma** (README → "Canlıya alma"):
 1. Supabase projesi (Frankfurt) → `npx supabase link --project-ref <ref>` → `npx supabase db push` → sign-up kapat → `npm run staff:add -- <e-posta> admin`.
 2. GitHub reposu → Vercel'e import → ortam değişkenleri (`.env.example`) → Functions bölgesi `fra1`.

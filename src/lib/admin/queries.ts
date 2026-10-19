@@ -9,6 +9,8 @@ export interface ListParams {
   status: ApplicationStatus | "all";
   sort: "newest" | "oldest";
   page: number;
+  /** Yalnızca başarısız e-postası olan başvurular */
+  failedEmail: boolean;
 }
 
 export function parseListParams(sp: Record<string, string | string[] | undefined>): ListParams {
@@ -20,6 +22,7 @@ export function parseListParams(sp: Record<string, string | string[] | undefined
     status: (APPLICATION_STATUSES as readonly string[]).includes(status) ? (status as ApplicationStatus) : "all",
     sort: one("sort") === "oldest" ? "oldest" : "newest",
     page: Number.isFinite(page) && page > 0 ? Math.min(page, 1000) : 1,
+    failedEmail: one("eposta") === "basarisiz",
   };
 }
 
@@ -79,8 +82,13 @@ export type ListedApplication = Pick<
  * Oturumlu istemciyle sorgular → RLS yalnızca adminin okumasına izin verir.
  * Arama: ad, soyad, e-posta, telefon, kurum ve bölümden üretilen search_text sütununda.
  */
-export function applicationsQuery(supabase: StaffSession["supabase"], p: Omit<ListParams, "page">) {
+export function applicationsQuery(
+  supabase: StaffSession["supabase"],
+  p: Omit<ListParams, "page">,
+  failedIds: string[] | null = null,
+) {
   let query = supabase.from("applications").select(LIST_COLUMNS, { count: "exact" });
+  if (p.failedEmail) query = query.in("id", failedIds && failedIds.length ? failedIds : ["00000000-0000-0000-0000-000000000000"]);
   if (p.status !== "all") query = query.eq("status", p.status);
   for (const term of searchTerms(p.q)) query = query.like("search_text", `%${term}%`);
   return query.order("created_at", { ascending: p.sort === "oldest" }).order("id");
@@ -90,10 +98,23 @@ export function applicationsQuery(supabase: StaffSession["supabase"], p: Omit<Li
  * Sayfalı liste. İstenen sayfa son sayfadan büyükse (ör. onaylar sonrası filtre
  * küçüldü, geri tuşu) hata vermek yerine son sayfa gösterilir; page değeri düzeltilir.
  */
+/** Başarısız e-postası olan başvuruların kimlikleri (az sayıda olması beklenir). */
+export async function failedEmailApplicationIds(supabase: StaffSession["supabase"]): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("email_logs")
+    .select("application_id")
+    .eq("status", "failed")
+    .limit(1000)
+    .returns<{ application_id: string }[]>();
+  if (error) throw new Error(`E-posta kayıtları okunamadı (${error.code})`);
+  return [...new Set((data ?? []).map((r) => r.application_id))];
+}
+
 export async function listApplications(supabase: StaffSession["supabase"], p: ListParams) {
+  const failedIds = p.failedEmail ? await failedEmailApplicationIds(supabase) : null;
   const fetchPage = (page: number) => {
     const from = (page - 1) * PAGE_SIZE;
-    return applicationsQuery(supabase, p)
+    return applicationsQuery(supabase, p, failedIds)
       .range(from, from + PAGE_SIZE - 1)
       .returns<ListedApplication[]>();
   };
@@ -101,7 +122,7 @@ export async function listApplications(supabase: StaffSession["supabase"], p: Li
   let { data, count, error } = await fetchPage(page);
   if (error?.code === "PGRST103" || (!error && (data?.length ?? 0) === 0 && (count ?? 0) > 0 && page > 1)) {
     // Aralık dışı → toplamı öğren ve son sayfaya git
-    const head = await applicationsQuery(supabase, p).range(0, 0);
+    const head = await applicationsQuery(supabase, p, failedIds).range(0, 0);
     if (head.error) throw new Error(`Başvurular okunamadı (${head.error.code})`);
     page = Math.max(1, Math.ceil((head.count ?? 0) / PAGE_SIZE));
     ({ data, count, error } = await fetchPage(page));
@@ -112,9 +133,10 @@ export async function listApplications(supabase: StaffSession["supabase"], p: Li
 
 /** CSV için tüm eşleşen satırlar; PostgREST'in satır sınırı (max_rows) aşılmaması için 500'erli sayfalar. */
 export async function allApplications(supabase: StaffSession["supabase"], p: Omit<ListParams, "page">) {
+  const failedIds = p.failedEmail ? await failedEmailApplicationIds(supabase) : null;
   const out: ListedApplication[] = [];
   for (let from = 0; from < 20_000; from += 500) {
-    const { data, error } = await applicationsQuery(supabase, p)
+    const { data, error } = await applicationsQuery(supabase, p, failedIds)
       .range(from, from + 499)
       .returns<ListedApplication[]>();
     if (error) throw new Error(`Başvurular okunamadı (${error.code})`);

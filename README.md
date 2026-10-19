@@ -45,8 +45,8 @@ Admin kullanıcısı: Supabase Studio veya `auth.admin.createUser` ile kullanıc
 | Komut | Ne test eder | Gerçek mi? |
 |---|---|---|
 | `npm test` | Token/QR, manuel kod, CSV enjeksiyonu, telefon normalize (Vitest) | Birim |
-| `npm run test:db` | 78 kontrol: RLS, yetkiler, durum geçişleri, KVKK silme, idempotent onay, kapasite, check-in, e-posta kilidi, rate limit, saklama + **eş zamanlılık** (30 paralel onay, 20 paralel check-in). `PGHOST/PGPORT/PGUSER` gerekir | Gerçek PostgreSQL (16 ve Supabase 17'de geçti) |
-| `npm run build && npm run test:e2e` | 37 uçtan uca senaryo (Playwright, masaüstü + Pixel 7): form, doğrulama, mükerrer, ağ hatası, honeypot, köken, rate limit, yetkisiz erişim, rol ayrımı, onay → QR e-postası → davetiye sayfası, çift sekme idempotency, ret/yedek/iptal, tekrar gönder/yeniden üret, kapasite (6 eş zamanlı sekme), ayarlar, toplu bilgilendirme, KVKK silme, ekip ekleme komutu, paylaşım görseli, Resend hata senaryosu + tekrar dene, manuel ve **sahte kamera ile gerçek QR okutma**, 15 paralel check-in, kamera izni reddi, mobil düzen | Gerçek yerel Supabase (Auth + PostgREST + RLS) + üretim derlemesi |
+| `npm run test:db` | 90 kontrol: RLS, yetkiler, durum geçişleri, KVKK silme, Türkçe arama katlaması, bilgilendirme hedefleri (1500+ e-posta kaydıyla), idempotent onay, kapasite, check-in, e-posta kilidi, rate limit, saklama + **eş zamanlılık** (30 paralel onay, 20 paralel check-in). `PGHOST/PGPORT/PGUSER` gerekir | Gerçek PostgreSQL (16 ve Supabase 17'de geçti) |
+| `npm run build && npm run test:e2e` | 54 uçtan uca senaryo (Playwright, masaüstü + Pixel 7): form, doğrulama, mükerrer, ağ hatası, honeypot, köken, rate limit, yetkisiz erişim, rol ayrımı, onay → QR e-postası → davetiye sayfası, çift sekme idempotency, ret/yedek/iptal, tekrar gönder/yeniden üret, kapasite (6 eş zamanlı sekme), ayarlar, toplu bilgilendirme, KVKK silme, ekip ekleme komutu, paylaşım görseli, Türkçe arama, sayfalama sınırı, oturum düşmesi, ağ kesintisi, **Supabase kesintisi (ağ geçidi durdurularak)**, askıda kalan check-in isteği, tekrar okutma, çevrimdışı uyarısı, Resend hata senaryosu + tekrar dene, manuel ve **sahte kamera ile gerçek QR okutma**, 15 paralel check-in, kamera izni reddi, mobil düzen | Gerçek yerel Supabase (Auth + PostgREST + RLS) + üretim derlemesi |
 
 E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı URL'yi reddeder) ve verileri sıfırlar. Hata senaryosu için ikinci bir sunucu örneği **gerçek Resend API'sine geçersiz anahtarla** bağlanır.
 
@@ -81,6 +81,14 @@ E2E testleri yalnızca yerel Supabase'e karşı çalışır (global setup canlı
 2. Admin'den onaylayın → QR'lı davetiye geldi mi, QR görünüyor mu?
 3. Telefonda `/admin/check-in` açın (https şart) → QR'ı okutun → "Giriş onaylandı"; tekrar okutun → "daha önce yapılmış".
 4. Test başvurusunu Supabase'den silin, `event_settings`'i gerçek değerlerle doldurun.
+
+## Etkinlik günü için notlar
+
+- **Kapı ekibi**: Her kapı telefonu için ayrı `checkin` kullanıcısı açmak en sağlıklısıdır (`npm run staff:add -- kapi1@… checkin`).
+- **Aynı kişi tekrar okutulursa**: Aynı cihaz az önce onayladıysa ekran mavi renkte "az önce giriş yaptı" der (giriş geçerli). Başka cihazdan veya daha önce girmiş biri okutulursa sarı "girişi daha önce yapılmış" uyarısı çıkar.
+- **İnternet kesilirse**: Ekranın üstünde kırmızı uyarı belirir. Yanıt gelmeyen istekler 8 sn'de iptal edilir; tekrar okutmak güvenlidir (çift giriş oluşmaz). Kamera çalışmazsa davetiyedeki 10 karakterlik kod elle girilir.
+- **Supabase/Wi-Fi kesintisi**: Panel kullanıcıyı girişe atmaz; "Sayfa yüklenemedi → Tekrar dene" gösterir.
+- **Başarısız e-postalar**: Başvurular sayfasındaki kırmızı "Başarısız e-postaları göster" bağlantısıyla listelenir; detaydan "Tekrar dene".
 
 ## Etkinlik öncesi akış
 

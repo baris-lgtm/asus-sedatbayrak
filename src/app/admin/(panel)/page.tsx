@@ -22,7 +22,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
   const qs = (overrides: Record<string, string | number>) => {
     const u = new URLSearchParams();
-    const merged = { q: params.q, status: params.status, sort: params.sort, page: params.page, ...overrides };
+    const merged = { q: params.q, status: params.status, sort: params.sort, page: params.page, eposta: params.failedEmail ? "basarisiz" : "", ...overrides };
     for (const [k, v] of Object.entries(merged)) if (v !== "" && v !== "all" && !(k === "page" && v === 1) && !(k === "sort" && v === "newest")) u.set(k, String(v));
     const s = u.toString();
     return s ? `?${s}` : "";
@@ -31,7 +31,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const backQs = qs({}).slice(1);
   const detailHref = (id: string) => `/admin/basvurular/${id}${backQs ? `?geri=${encodeURIComponent(backQs)}` : ""}`;
 
-  const exportQs = new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.status !== "all" ? { status: params.status } : {}), sort: params.sort });
+  const exportQs = new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.status !== "all" ? { status: params.status } : {}), ...(params.failedEmail ? { eposta: "basarisiz" } : {}), sort: params.sort });
 
   const cards: { label: string; value: number | undefined; status?: string; strong?: boolean }[] = [
     { label: "Toplam başvuru", value: stats?.total },
@@ -56,7 +56,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
             <p className="text-sm">
               Kapasite: <strong>{stats.approved + stats.checked_in}</strong> / {stats.capacity} dolu
               {stats.failed_emails > 0 && (
-                <span className="ml-4 font-semibold text-err">{stats.failed_emails} başarısız e-posta</span>
+                <Link href="/admin?eposta=basarisiz" className="ml-4 font-semibold text-err underline underline-offset-4">
+                  Başarısız e-postaları göster ({stats.failed_emails})
+                </Link>
               )}
             </p>
           )}
@@ -72,7 +74,14 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       </section>
 
       <section aria-label="Filtreler" className="border border-rule bg-paper p-4">
+        {params.failedEmail && (
+          <p className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+            <span className="font-semibold text-err">Yalnızca başarısız e-postası olan başvurular gösteriliyor.</span>
+            <Link href="/admin" className="underline underline-offset-4">Filtreyi kaldır</Link>
+          </p>
+        )}
         <form method="get" className="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+          {params.failedEmail && <input type="hidden" name="eposta" value="basarisiz" />}
           <div>
             <label htmlFor="q" className="block text-xs font-semibold">Ara</label>
             <input id="q" name="q" type="search" defaultValue={params.q} placeholder="Ad, e-posta, telefon, kurum" className="field-input" />
