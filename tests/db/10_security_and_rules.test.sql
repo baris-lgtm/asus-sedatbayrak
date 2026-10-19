@@ -316,6 +316,7 @@ select tests.ok((select count(*) = 1 from public.email_logs where email_type='ev
 
 \echo '--- 17. Türkçe arama katlaması'
 select tests.ok(public.tr_fold('İLKER Işık ÇAĞRI ılgaz ŞULE Öykü Ümit') = 'ilker isik cagri ilgaz sule oyku umit', 'tr_fold Türkçe harfleri katlıyor');
+select tests.ok(public.tr_fold(E's\u0327ahin') = public.tr_fold('şahin'), 'tr_fold ayrık (NFD) yazımı da katlıyor');
 set role service_role;
 insert into public.applications (first_name, last_name, email, phone, participant_type, institution, department, kvkk_notice_version)
 values ('Işıl', 'Çağlar', 'isil@example.com', '+905551112233', 'student', 'İTÜ', 'İç Mimarlık', 'v');
@@ -331,7 +332,9 @@ update public.event_settings set info_changed_at = now() - interval '1 hour' whe
 update public.event_settings set capacity = capacity + 1 where id = 1;
 select tests.ok((select info_changed_at < now() - interval '30 minutes' from public.event_settings), 'kapasite değişince info_changed_at sabit');
 update public.event_settings set venue_name = 'Yeni Mekân' where id = 1;
-select tests.ok((select info_changed_at > now() - interval '1 minute' from public.event_settings), 'mekân değişince info_changed_at ilerledi');
+select tests.ok((select info_changed_at < now() - interval '30 minutes' from public.event_settings), 'kesinleşmemiş mekân düzenlemesi tur açmıyor');
+update public.event_settings set venue_name = 'Yeni Mekân', venue_address = 'Adres 1', venue_confirmed = true where id = 1;
+select tests.ok((select info_changed_at > now() - interval '1 minute' from public.event_settings), 'mekân kesinleşince info_changed_at ilerledi');
 
 \echo '--- 19. Bilgilendirme hedefleri (SQL, satır sınırı yok)'
 set role service_role;
@@ -372,6 +375,9 @@ select tests.ok((select not bool_or(informed) from public.admin_event_update_tar
 select tests.ok((select not bool_or(informed) from public.admin_event_update_targets('0000000000000000') t
                    join public.applications a on a.id = t.application_id where a.email = 'hedef4@example.com'),
                 'farklı bilgi sürümünde eski güncelleme sayılmıyor');
+select tests.ok((select attempts = 0 and last_status is null from public.admin_event_update_targets('abcdef0123456789') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hedef1@example.com'),
+                'denenmemiş alıcıda deneme sayısı 0');
 select tests.expect_error($$select * from public.admin_event_update_targets('kotu; drop')$$, 'ERR_BAD_REQUEST', 'geçersiz sürüm reddediliyor');
 select tests.login('00000000-0000-0000-0000-00000000000c');
 select tests.expect_error($$select * from public.admin_event_update_targets('abcdef0123456789')$$, 'ERR_FORBIDDEN', 'kapı ekibi hedef listesini göremez');

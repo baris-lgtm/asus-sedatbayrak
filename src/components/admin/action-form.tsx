@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useActionState, useContext, useEffect, useState } from "react";
+import { createContext, useActionState, useCallback, useContext, useEffect, useState } from "react";
 import type { ActionState } from "@/app/admin/actions";
 
 const NETWORK_ERROR: ActionState = {
@@ -20,6 +20,18 @@ interface Feedback {
   busy: boolean;
 }
 const FeedbackContext = createContext<Feedback | null>(null);
+
+/** Aynı sayfadaki diğer formların (ör. kalıcı silme) ortak kilide katılması için. */
+export function useActionLock(pending: boolean): boolean {
+  const feedback = useContext(FeedbackContext);
+  const setBusy = feedback?.setBusy;
+  useEffect(() => {
+    if (!pending || !setBusy) return;
+    setBusy(1);
+    return () => setBusy(-1);
+  }, [pending, setBusy]);
+  return pending || (feedback?.busy ?? false);
+}
 
 function Message({ state }: { state: ActionState }) {
   if (!state.message) return null;
@@ -41,10 +53,9 @@ function Message({ state }: { state: ActionState }) {
 export function ActionFeedbackProvider({ children }: { children: React.ReactNode }) {
   const [last, setLast] = useState<ActionState | null>(null);
   const [busyCount, setBusyCount] = useState(0);
+  const setBusy = useCallback((d: 1 | -1) => setBusyCount((c) => Math.max(0, c + d)), []);
   return (
-    <FeedbackContext.Provider
-      value={{ report: setLast, setBusy: (d) => setBusyCount((c) => Math.max(0, c + d)), busy: busyCount > 0 }}
-    >
+    <FeedbackContext.Provider value={{ report: setLast, setBusy, busy: busyCount > 0 }}>
       <div aria-live="polite" role="status">
         {last && <Message state={last} />}
       </div>
@@ -85,12 +96,7 @@ export function ActionForm({
     return result;
   }, {});
 
-  const setBusy = feedback?.setBusy;
-  useEffect(() => {
-    if (!pending || !setBusy) return;
-    setBusy(1);
-    return () => setBusy(-1);
-  }, [pending, setBusy]);
+  const locked = useActionLock(pending);
 
   const cls =
     variant === "primary"
@@ -98,8 +104,6 @@ export function ActionForm({
       : variant === "danger"
         ? "btn border-err bg-paper text-err hover:bg-err hover:text-paper"
         : "btn btn-secondary";
-  const locked = pending || (feedback?.busy ?? false);
-
   return (
     <form
       action={formAction}

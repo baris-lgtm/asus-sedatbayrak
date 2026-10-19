@@ -168,7 +168,7 @@ export default async function ApplicationDetail({
                       </span>
                       {e.last_error && <span className="mt-1 block text-xs text-err">{e.last_error}</span>}
                     </div>
-                    {e.status === "failed" && (
+                    {(e.status === "failed" || (e.status === "sending" && Date.now() - new Date(e.updated_at).getTime() > 5 * 60_000)) && (
                       <div className="w-36">
                         <ActionForm action={retryEmailAction} fields={{ logId: e.id }} label="Tekrar dene" pendingLabel="Gönderiliyor…" />
                       </div>

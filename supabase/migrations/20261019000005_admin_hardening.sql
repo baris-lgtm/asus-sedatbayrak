@@ -16,7 +16,8 @@ immutable
 parallel safe
 set search_path = ''
 as $$
-  select lower(translate(coalesce(p, ''), 'İIıŞşĞğÜüÖöÇçÂâÎîÛû', 'iiissgguuooccaaiiuu'))
+  -- NFC: "ş" ayrık (s + birleşik çengel) kaydedilmişse de aynı sonuç çıksın.
+  select lower(translate(normalize(coalesce(p, ''), NFC), 'İIıŞşĞğÜüÖöÇçÂâÎîÛû', 'iiissgguuooccaaiiuu'))
 $$;
 
 alter table public.applications
@@ -28,7 +29,9 @@ alter table public.applications
 grant select (search_text) on public.applications to authenticated;
 
 -- ---------- Bilgi değişim zamanı --------------------------------------------
-alter table public.event_settings add column info_changed_at timestamptz not null default now();
+-- Başlangıç değeri epoch: kurulumdan önce gönderilmiş davetiyeler "yeni tur" sayılmasın;
+-- ilk gerçek bilgi değişikliğinde ilerler.
+alter table public.event_settings add column info_changed_at timestamptz not null default '1970-01-01T00:00:00Z';
 grant select (info_changed_at) on public.event_settings to anon, authenticated;
 
 create or replace function public.tg_event_settings_info_changed()
@@ -37,11 +40,21 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  if (new.starts_at, new.ends_at, new.date_confirmed, new.venue_name, new.venue_address,
-      new.venue_map_url, new.transport_info, new.venue_confirmed)
+  -- Yalnızca katılımcıya GÖSTERİLEN bilgi değişince ilerler (uygulamadaki eventInfoVersion ile aynı alanlar):
+  -- kesinleşmemiş tarih/mekân üzerinde yapılan taslak düzenlemeler yeni bilgilendirme turu açmaz.
+  if (case when new.date_confirmed then new.starts_at end,
+      case when new.date_confirmed then new.ends_at end,
+      case when new.venue_confirmed then new.venue_name end,
+      case when new.venue_confirmed then new.venue_address end,
+      case when new.venue_confirmed then new.venue_map_url end,
+      case when new.venue_confirmed then new.transport_info end)
      is distinct from
-     (old.starts_at, old.ends_at, old.date_confirmed, old.venue_name, old.venue_address,
-      old.venue_map_url, old.transport_info, old.venue_confirmed) then
+     (case when old.date_confirmed then old.starts_at end,
+      case when old.date_confirmed then old.ends_at end,
+      case when old.venue_confirmed then old.venue_name end,
+      case when old.venue_confirmed then old.venue_address end,
+      case when old.venue_confirmed then old.venue_map_url end,
+      case when old.venue_confirmed then old.transport_info end) then
     new.info_changed_at := now();
   end if;
   -- Aksi hâlde değer korunur (istemci rollerinin bu sütuna yazma yetkisi yoktur).
@@ -59,7 +72,7 @@ create trigger event_settings_info_changed
 --   bilgi son değiştikten sonra davetiye e-postası (güncel bilgiyle) başarıyla gitmiş.
 -- Sıralama sabittir (onay sırası) → turlar deterministik ilerler.
 create or replace function public.admin_event_update_targets(p_version text)
-returns table (application_id uuid, invitation_id uuid, informed boolean)
+returns table (application_id uuid, invitation_id uuid, informed boolean, last_status public.email_status, attempts integer, last_attempt_at timestamptz)
 language plpgsql
 stable
 security definer
@@ -87,9 +100,14 @@ begin
                      and l.invitation_id = i.id
                      and l.sent_at >= v_since)
               )
-         )
+         ),
+         u.status,
+         coalesce(u.attempt_count, 0),
+         u.updated_at
     from public.invitations i
     join public.applications a on a.id = i.application_id
+    left join public.email_logs u
+           on u.dedupe_key = 'event_update:' || i.application_id::text || ':' || p_version
    where i.revoked_at is null
      and a.status = 'approved'
    order by i.issued_at, i.id;

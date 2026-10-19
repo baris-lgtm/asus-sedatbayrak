@@ -47,7 +47,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Kamera yalnızca https (veya localhost) üzerinde çalışır.
 
 ## Durum (17 Ekim 2026)
-Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 90 DB + 13 birim + 54 E2E testi geçiyor (admin paneli iki bağımsız incelemeden geçti); `next build` temiz.
+Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 93 DB + 13 birim + 56 E2E testi geçiyor (admin paneli iki bağımsız incelemeden geçti); `next build` temiz.
 **Sıradaki iş: canlıya alma** (README → "Canlıya alma"):
 1. Supabase projesi (Frankfurt) → `npx supabase link --project-ref <ref>` → `npx supabase db push` → sign-up kapat → `npm run staff:add -- <e-posta> admin`.
 2. GitHub reposu → Vercel'e import → ortam değişkenleri (`.env.example`) → Functions bölgesi `fra1`.

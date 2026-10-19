@@ -7,7 +7,8 @@ import { normalizePhone } from "@/lib/phone";
 import { PARTICIPANT_TYPES } from "@/lib/types";
 
 // Kontrol karakterlerini temizler, boşlukları sadeleştirir.
-const clean = (v: string) => v.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
+const clean = (v: string) =>
+  v.normalize("NFC").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
 
 const requiredText = (label: string, max: number) =>
   z

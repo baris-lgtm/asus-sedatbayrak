@@ -1,6 +1,7 @@
 import { requireAdminPage } from "@/lib/auth";
 import { formatDateTime, toIstanbulLocalInput } from "@/lib/format";
 import type { EventSettings } from "@/lib/types";
+import Link from "next/link";
 import { SettingsForm } from "./settings-form";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
 import { sendEventUpdatesAction } from "@/app/admin/actions";
@@ -46,7 +47,13 @@ export default async function SettingsPage() {
               Bu bilgi sürümü için: <strong>{progress.sent}</strong> / {progress.total} onaylı katılımcı bilgilendirildi
               {progress.pending.length > 0 && <>, <strong>{progress.pending.length}</strong> kişi bekliyor</>}.
             </p>
-            {progress.pending.length > 0 && (
+            {progress.stuck > 0 && (
+              <p className="text-sm font-medium text-err">
+                {progress.stuck} kişiye 3 denemede de gönderilemedi.{" "}
+                <Link href="/admin?eposta=basarisiz" className="underline underline-offset-4">Başarısız e-postaları göster</Link>
+              </p>
+            )}
+            {progress.sendable.length > 0 && (
               <div className="max-w-xs">
                 <ActionForm
                   action={sendEventUpdatesAction}
@@ -54,7 +61,7 @@ export default async function SettingsPage() {
                   label="Bilgilendirme gönder (20 kişilik tur)"
                   pendingLabel="Gönderiliyor…"
                   variant="primary"
-                  confirmText={`${progress.pending.length} katılımcıya güncel tarih/mekân e-postası gönderilsin mi?`}
+                  confirmText={`Bekleyen ${progress.sendable.length} katılımcıdan ilk 20 kişiye güncel tarih/mekân e-postası gönderilsin mi?`}
                 />
               </div>
             )}

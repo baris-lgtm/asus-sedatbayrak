@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useId } from "react";
 import { deleteApplicationAction, type ActionState } from "@/app/admin/actions";
+import { useActionLock } from "@/components/admin/action-form";
 
 /** KVKK silme talebi için kalıcı silme. Yanlışlıkla tıklamaya karşı "SİL" yazılması istenir. */
 export function DeleteApplicationForm({ id }: { id: string }) {
@@ -21,8 +22,10 @@ export function DeleteApplicationForm({ id }: { id: string }) {
     return result;
   }, {});
 
+  const locked = useActionLock(pending);
+
   return (
-    <form action={action} className="space-y-2 border-t border-rule pt-4">
+    <form action={action} onSubmit={(e) => locked && e.preventDefault()} className="space-y-2 border-t border-rule pt-4">
       <input type="hidden" name="id" value={id} />
       <p className="text-sm font-semibold">Kalıcı olarak sil</p>
       <p className="text-xs leading-relaxed text-graphite">
@@ -35,7 +38,7 @@ export function DeleteApplicationForm({ id }: { id: string }) {
       <button
         type="submit"
         className="btn w-full min-h-11 border-err bg-paper text-sm text-err hover:bg-err hover:text-paper"
-        disabled={pending || Boolean(state.ok)}
+        disabled={locked || Boolean(state.ok)}
       >
         {pending ? "Siliniyor…" : state.ok ? "Silindi" : "Başvuruyu kalıcı olarak sil"}
       </button>

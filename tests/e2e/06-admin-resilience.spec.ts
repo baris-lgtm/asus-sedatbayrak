@@ -170,6 +170,47 @@ test.describe("Admin paneli dayanıklılık", () => {
     }
   });
 
+  test("sürekli başarısız olan alıcı bilgilendirme turunu tıkamaz", async ({ page }) => {
+    test.setTimeout(180_000);
+    const { createHash } = await import("node:crypto");
+    const bad = await seedApplication({ first_name: "Ulasilamaz" });
+    const good = await seedApplication({ first_name: "Ulasilir" });
+    for (const x of [bad, good]) {
+      await openApplication(page, x.id);
+      await page.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+      await expect(page.getByText(/onaylandı/).first()).toBeVisible();
+    }
+    try {
+      await page.goto("/admin/ayarlar");
+      await page.getByLabel("Başlangıç (İstanbul saati)").fill("2026-10-29T10:00");
+      await page.getByLabel("Bitiş (İstanbul saati)").fill("");
+      await page.getByRole("checkbox", { name: /Tarih kesinleşti/ }).check();
+      await page.getByRole("button", { name: "Ayarları kaydet" }).click();
+      await expect(page.getByText("Ayarlar kaydedildi.")).toBeVisible();
+      // Uygulamadaki eventInfoVersion ile aynı hesap
+      const { data: st } = await service().from("event_settings").select("*").eq("id", 1).single();
+      const version = createHash("sha256")
+        .update(JSON.stringify([st.date_confirmed ? st.starts_at : null, st.date_confirmed ? st.ends_at : null, st.venue_confirmed ? st.venue_name : null, st.venue_confirmed ? st.venue_address : null, st.venue_confirmed ? st.venue_map_url : null, st.venue_confirmed ? st.transport_info : null]))
+        .digest("hex").slice(0, 16);
+      await service().from("email_logs").insert({ application_id: bad.id, email_type: "event_update", dedupe_key: `event_update:${bad.id}:${version}`, status: "failed", attempt_count: 3, last_error: "test: adres reddedildi" });
+
+      for (let round = 0; round < 30; round++) {
+        await page.reload();
+        await expect(page.getByText(/onaylı katılımcı bilgilendirildi/)).toBeVisible();
+        const button = page.getByRole("button", { name: /Bilgilendirme gönder/ });
+        if ((await button.count()) === 0) break;
+        await button.click();
+        await expect(page.getByText(/katılımcıya gönderildi|ulaşılamadı|tamamına/)).toBeVisible({ timeout: 60_000 });
+      }
+      expect(mailsTo(good.email, "event_update")).toHaveLength(1);
+      expect(mailsTo(bad.email, "event_update")).toHaveLength(0);
+      await page.reload();
+      await expect(page.getByText("1 kişiye 3 denemede de gönderilemedi.")).toBeVisible();
+    } finally {
+      await service().from("event_settings").update({ date_confirmed: false, starts_at: null, ends_at: null }).eq("id", 1);
+    }
+  });
+
   test("tekrar dene: durumu değişmiş başvuruya eski bildirim gitmez", async ({ page }) => {
     const a = await seedApplication({ first_name: "Eski" });
     // Başarısız "yedek liste" e-postası kaydı, ardından onay
@@ -272,6 +313,30 @@ test.describe("Check-in dayanıklılık", () => {
     await expect(page.getByText("Bu katılımcı az önce giriş yaptı")).toBeVisible();
     const { data } = await service().from("invitations").select("checked_in_at").eq("application_id", a.id).single();
     expect(data?.checked_in_at).not.toBeNull();
+  });
+
+  test("aynı cihazda 60 sn'den eski giriş tekrar okutulursa (ekran görüntüsü) sarı uyarı verir", async ({ page, browser }) => {
+    const a = await seedApplication({ first_name: "Ekran", last_name: "Goruntusu" });
+    const adminCtx = await browser.newContext({ baseURL: "http://localhost:3000" });
+    const adminPage = await adminCtx.newPage();
+    adminPage.on("dialog", (d) => d.accept());
+    await uiLogin(adminPage, USERS.admin);
+    await adminPage.goto(`/admin/basvurular/${a.id}`);
+    await adminPage.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+    await expect(adminPage.getByText(/onaylandı/).first()).toBeVisible();
+    await adminCtx.close();
+    const { code } = invitationFromMail(mailsTo(a.email, "invitation")[0]);
+
+    await page.clock.install();
+    await uiLogin(page, USERS.door);
+    const input = page.getByLabel("Giriş kodu", { exact: true });
+    await input.fill(code);
+    await page.getByRole("button", { name: "Kontrol et" }).click();
+    await expect(page.getByText("Giriş onaylandı")).toBeVisible();
+    await page.clock.fastForward(61_000);
+    await input.fill(code);
+    await page.getByRole("button", { name: "Kontrol et" }).click();
+    await expect(page.getByText("Bu katılımcının girişi daha önce yapılmış")).toBeVisible();
   });
 
   test("oturum düşerse check-in ekranı giriş bağlantısı gösterir", async ({ page, context }) => {

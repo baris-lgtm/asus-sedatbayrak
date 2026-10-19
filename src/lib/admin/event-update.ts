@@ -30,9 +30,20 @@ export interface UpdateTarget {
  * sürümü için bilgilendirilip bilgilendirilmedikleri. Veritabanında hesaplanır
  * (admin_event_update_targets): PostgREST satır sınırı yok, sıra sabit.
  */
+/** Bu kadar başarısız denemeden sonra alıcı turdan çıkarılır (başvuru detayından elle denenir). */
+export const MAX_UPDATE_ATTEMPTS = 3;
+const SENDING_STALE_MS = 5 * 60_000;
+
 export async function eventUpdateTargets(supabase: StaffSession["supabase"], version: string) {
   // 1000 satırlık API sınırı için sayfalı okuma (400 kişide tek sayfa).
-  type Row = { application_id: string; invitation_id: string; informed: boolean };
+  type Row = {
+    application_id: string;
+    invitation_id: string;
+    informed: boolean;
+    last_status: string | null;
+    attempts: number;
+    last_attempt_at: string | null;
+  };
   const rows: Row[] = [];
   for (let from = 0; from < 20_000; from += 1000) {
     const { data, error } = await supabase.rpc("admin_event_update_targets", { p_version: version }).range(from, from + 999);
@@ -41,8 +52,24 @@ export async function eventUpdateTargets(supabase: StaffSession["supabase"], ver
     rows.push(...page);
     if (page.length < 1000) break;
   }
-  const pending: UpdateTarget[] = rows
-    .filter((r) => !r.informed)
-    .map((r) => ({ applicationId: r.application_id, invitationId: r.invitation_id }));
-  return { total: rows.length, sent: rows.length - pending.length, pending };
+  const now = Date.now();
+  const uninformed = rows.filter((r) => !r.informed);
+  const inFlight = (r: Row) =>
+    r.last_status === "sending" && r.last_attempt_at !== null && now - new Date(r.last_attempt_at).getTime() < SENDING_STALE_MS;
+  const stuck = uninformed.filter((r) => r.last_status === "failed" && r.attempts >= MAX_UPDATE_ATTEMPTS);
+  // Gönderilebilir olanlar: önce hiç denenmemiş, sonra az denenmiş — sürekli başarısız olanlar turu tıkamaz.
+  const sendable = uninformed
+    .filter((r) => !inFlight(r) && !stuck.includes(r))
+    .sort((x, y) => x.attempts - y.attempts);
+  const toTarget = (r: Row): UpdateTarget => ({ applicationId: r.application_id, invitationId: r.invitation_id });
+  return {
+    total: rows.length,
+    sent: rows.length - uninformed.length,
+    /** Henüz bilgilendirilmemiş herkes (sürekli başarısız olanlar dahil) */
+    pending: uninformed.map(toTarget),
+    /** Bu turda gönderilecek sıradakiler */
+    sendable: sendable.map(toTarget),
+    /** 3 denemede de başarısız olanlar — başvuru detayından kontrol edilmeli */
+    stuck: stuck.length,
+  };
 }

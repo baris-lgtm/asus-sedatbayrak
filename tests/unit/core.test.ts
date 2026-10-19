@@ -111,6 +111,7 @@ test("Türkçe katlama: büyük/küçük ve aksan farkı yok", () => {
   assert.equal(trFold("İLKER Işık ÇAĞRI ılgaz ŞULE Öykü Ümit"), "ilker isik cagri ilgaz sule oyku umit");
   assert.equal(trFold("IŞIK"), trFold("ışık"));
   assert.equal(trFold("İlker"), trFold("ilker"));
+  assert.equal(trFold("s\u0327ahin"), trFold("şahin"), "ayrık (NFD) yazım da eşleşir");
 });
 
 test("Arama terimleri: filtre sözdizimi ve LIKE jokerleri temizlenir; telefon birleştirilir", () => {
@@ -125,6 +126,6 @@ test("Arama terimleri: filtre sözdizimi ve LIKE jokerleri temizlenir; telefon b
 
 test("Telefon görüntüleme", () => {
   assert.equal(displayPhone("+905551112233"), "0555 111 22 33");
-  assert.equal(displayPhone("+442079460958"), "00442079460958");
+  assert.equal(displayPhone("+442079460958"), "0044 2079460958");
   assert.ok(!/^[=+\-@]/.test(displayPhone("+905551112233")), "CSV'de formül önlemi gerektirmez");
 });

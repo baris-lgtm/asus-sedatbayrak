@@ -17,6 +17,12 @@ const REQUEST_TIMEOUT_MS = 8000;
 const SAME_CODE_IGNORE_MS = 12_000;
 /** Başarılı giriş ekranı bu süre sonra kendiliğinden temizlenir. */
 const OK_CLEAR_MS = 4000;
+/**
+ * "Az önce giriş yaptı" (mavi, alarmsız) yalnızca bu süre içinde ve yalnızca BU cihazda
+ * onaylanan / bu cihazda yanıtı kaybolan aynı kod için gösterilir. Daha eski veya başka
+ * cihazdan yapılmış girişler her zaman sarı uyarıdır (ekran görüntüsüyle ikinci giriş denemesi).
+ */
+const SOFT_WINDOW_MS = 60_000;
 
 function timeTr(iso: string) {
   return new Intl.DateTimeFormat("tr-TR", { timeZone: "Europe/Istanbul", hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }).format(new Date(iso));
@@ -45,9 +51,10 @@ export function CheckInScanner() {
   const mountedRef = useRef(true);
   const busyRef = useRef(false);
   const lastScanRef = useRef<{ value: string; at: number } | null>(null);
-  /** Bu cihazda az önce "ok" alınan girişler (checked_in_at → zaman). */
+  /** Bu cihazda "ok" alınan girişler (checked_in_at → yerel zaman). */
   const admittedHereRef = useRef(new Map<string, number>());
-  const lastNetworkFailureRef = useRef(0);
+  /** Bu cihazda yanıtı alınamayan son istek (aynı kod tekrar denenirse "az önce" sayılabilir). */
+  const lastFailureRef = useRef<{ value: string; at: number } | null>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const clearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,7 +115,7 @@ export function CheckInScanner() {
       if (res.status === 401) {
         next = { result: "error", message: "Oturumun sona ermiş. Tekrar giriş yapman gerekiyor.", sessionExpired: true };
       } else if (!res.ok) {
-        lastNetworkFailureRef.current = Date.now();
+        lastFailureRef.current = { value: trimmed, at: Date.now() };
         next = { result: "error", message: (body.error as string) ?? "Kontrol yapılamadı. Tekrar okut." };
       } else {
         const data = body as unknown as CheckInResult;
@@ -116,17 +123,22 @@ export function CheckInScanner() {
           admittedHereRef.current.set(data.checked_in_at, Date.now());
           next = data;
         } else if (data.result === "already") {
-          // Aynı giriş: bu cihaz az önce onayladı, ya da yanıt kaybolduktan sonra tekrar okutuldu.
-          const admittedHere = admittedHereRef.current.has(data.checked_in_at);
+          const now = Date.now();
+          // 1) Bu cihaz bu girişi son 60 sn içinde kendisi onayladı
+          const admittedAt = admittedHereRef.current.get(data.checked_in_at);
+          const admittedHere = admittedAt !== undefined && now - admittedAt < SOFT_WINDOW_MS;
+          // 2) Bu cihazda AYNI kod için yanıt kayboldu ve giriş de o sırada (bu hesapla) kaydedildi
+          const lost = lastFailureRef.current;
           const afterLostResponse =
-            data.by_me === true && (data.seconds_ago ?? 9999) < 90 && Date.now() - lastNetworkFailureRef.current < 90_000;
+            lost !== null && lost.value === trimmed && now - lost.at < SOFT_WINDOW_MS &&
+            data.by_me === true && (data.seconds_ago ?? Infinity) * 1000 < SOFT_WINDOW_MS + 10_000;
           next = { ...data, soft: admittedHere || afterLostResponse };
         } else {
           next = data;
         }
       }
     } catch {
-      lastNetworkFailureRef.current = Date.now();
+      lastFailureRef.current = { value: trimmed, at: Date.now() };
       // Aynı QR'ı hemen tekrar okutabilsinler.
       lastScanRef.current = null;
       next = {
@@ -144,7 +156,12 @@ export function CheckInScanner() {
     if (next.result === "ok") {
       navigator.vibrate?.(80);
       setCode("");
-      clearTimer.current = setTimeout(() => mountedRef.current && setShown((s) => (s === next ? null : s)), OK_CLEAR_MS);
+      clearTimer.current = setTimeout(() => {
+        if (!mountedRef.current) return;
+        setShown((s) => (s === next ? null : s));
+        // Ekran temizlenince aynı QR yeniden gösterilirse (ör. aynı kodla ikinci kişi) yanıt verilsin.
+        lastScanRef.current = null;
+      }, OK_CLEAR_MS);
     } else if (!(next.result === "already" && "soft" in next && next.soft)) {
       navigator.vibrate?.([60, 60, 60]);
     }
@@ -180,8 +197,8 @@ export function CheckInScanner() {
       });
       scannerRef.current = scanner;
       await scanner.start();
-      // Kamera açılırken sayfadan çıkıldıysa akışı hemen kapat.
-      if (!mountedRef.current) {
+      // Kamera açılırken sayfadan çıkıldıysa veya "Kamerayı kapat"a basıldıysa akışı kapat.
+      if (!mountedRef.current || scannerRef.current !== scanner) {
         scanner.destroy();
         return;
       }
@@ -210,7 +227,7 @@ export function CheckInScanner() {
             ? {
                 tone: "bg-blue text-paper",
                 title: "Bu katılımcı az önce giriş yaptı",
-                body: `${shown.first_name} ${shown.last_name} — giriş ${timeTr(shown.checked_in_at)} itibarıyla geçerli. Tekrar okutmaya gerek yok.`,
+                body: `${shown.first_name} ${shown.last_name} — giriş ${timeTr(shown.checked_in_at)} itibarıyla bu cihazda onaylandı. Karşındaki kişi ${shown.first_name} ${shown.last_name} değilse girişe izin verme.`,
               }
             : {
                 tone: "bg-amber-400 text-ink",

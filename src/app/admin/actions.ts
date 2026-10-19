@@ -15,7 +15,7 @@ import { requireEnv, ConfigError } from "@/lib/env";
 import { issueInvitation } from "@/lib/server/invitation-token";
 import { describeOutcome, type SendOutcome } from "@/lib/email/send";
 import { retryLoggedEmail, sendEventUpdate, sendInvitation, sendStatusNotice } from "@/lib/email/notifications";
-import { eventInfoVersion, eventUpdateTargets } from "@/lib/admin/event-update";
+import { MAX_UPDATE_ATTEMPTS, eventInfoVersion, eventUpdateTargets } from "@/lib/admin/event-update";
 import { getEventSettingsStrict } from "@/lib/event-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fromIstanbulLocalInput } from "@/lib/format";
@@ -53,6 +53,9 @@ async function loadApplication(id: string) {
 const EMAIL_LOOKUP_FAILED: SendOutcome = { status: "failed", error: "Başvuru bilgisi okunamadı" };
 
 function withEmail(base: string, outcome: SendOutcome | null): ActionState {
+  if (outcome === EMAIL_LOOKUP_FAILED) {
+    return { ok: false, message: `${base} Ancak davetiye e-postası gönderilemedi; "Davetiyeyi tekrar gönder" ile tekrar dene.` };
+  }
   return { ok: true, message: outcome ? `${base} ${describeOutcome(outcome)}` : base };
 }
 
@@ -190,12 +193,13 @@ export async function retryEmailAction(_prev: ActionState, formData: FormData): 
     if (!id.success) return { ok: false, message: "Geçersiz istek." };
     const { data: log, error: logError } = await admin.supabase
       .from("email_logs")
-      .select("id, application_id, invitation_id, email_type, status, dedupe_key")
+      .select("id, application_id, invitation_id, email_type, status, dedupe_key, updated_at")
       .eq("id", id.data)
-      .maybeSingle<Pick<EmailLog, "id" | "application_id" | "invitation_id" | "email_type" | "status" | "dedupe_key">>();
+      .maybeSingle<Pick<EmailLog, "id" | "application_id" | "invitation_id" | "email_type" | "status" | "dedupe_key" | "updated_at">>();
     if (logError) return { ok: false, message: "E-posta kaydı okunamadı. Tekrar dene." };
     if (!log) return { ok: false, message: "E-posta kaydı bulunamadı." };
-    if (log.status !== "failed") return { ok: false, message: "Yalnızca başarısız e-postalar tekrar denenebilir." };
+    const stale = log.status === "sending" && Date.now() - new Date(log.updated_at).getTime() > 5 * 60_000;
+    if (log.status !== "failed" && !stale) return { ok: false, message: "Yalnızca başarısız (veya 5 dakikadır takılı kalmış) e-postalar tekrar denenebilir." };
     const app = await loadApplication(log.application_id);
     if (!app) return { ok: false, message: "Başvuru bulunamadı." };
 
@@ -324,8 +328,8 @@ export async function deleteApplicationAction(_prev: ActionState, formData: Form
     if (typed !== "SİL" && typed !== "SIL") return { ok: false, message: "Silmeyi onaylamak için kutuya SİL yaz." };
     const { error } = await admin.supabase.rpc("admin_delete_application", { p_application_id: id.data });
     if (error) return { ok: false, message: dbErrorMessage(error) };
-    // Yalnızca liste yenilenir; silinen başvurunun detay sayfasını yeniden çizmeye çalışmayız.
-    revalidatePath("/admin");
+    // revalidatePath çağrılmaz: silinen detay sayfası yeniden çizilip kısa bir 404 göstermesin.
+    // Liste sayfası dinamik olduğundan istemci yönlendirmesinde zaten güncel veriyle gelir.
     // Yönlendirmeyi istemci yapar (action içinden redirect, hata yakalama sarmalayıcısıyla çakışmasın).
     return { ok: true, message: "Başvuru kalıcı olarak silindi.", redirectTo: "/admin?silindi=1" };
   } catch (e) {
@@ -350,12 +354,20 @@ export async function sendEventUpdatesAction(_prev: ActionState, _formData: Form
       return { ok: false, message: "Önce tarihi veya mekânı kesinleşmiş olarak kaydet." };
     }
     const version = eventInfoVersion(settings);
-    const { total, pending } = await eventUpdateTargets(admin.supabase, version);
+    const { total, pending, sendable, stuck } = await eventUpdateTargets(admin.supabase, version);
     if (total === 0) return { ok: false, message: "Henüz onaylı katılımcı yok." };
     if (pending.length === 0) return { ok: true, message: `Güncel bilgi ${total} katılımcının tamamına gönderildi.` };
+    if (sendable.length === 0) {
+      return {
+        ok: false,
+        message: stuck
+          ? `Kalan ${stuck} kişiye ${MAX_UPDATE_ATTEMPTS} denemede de gönderilemedi. Başvurular sayfasından "Başarısız e-postaları göster" ile kontrol et.`
+          : "Gönderimler sürüyor; birkaç dakika sonra tekrar bak.",
+      };
+    }
 
     const db = createAdminClient();
-    const batch = pending.slice(0, UPDATE_BATCH);
+    const batch = sendable.slice(0, UPDATE_BATCH);
     const { data: apps, error: appsError } = await db
       .from("applications")
       .select("id, first_name, email")
@@ -384,8 +396,10 @@ export async function sendEventUpdatesAction(_prev: ActionState, _formData: Form
 
     const after = await eventUpdateTargets(admin.supabase, version);
     const parts = [`${sent} katılımcıya gönderildi.`];
-    if (failed) parts.push(`${failed} gönderim başarısız; tekrar basınca yeniden denenir.`);
-    parts.push(after.pending.length > 0 ? `Kalan: ${after.pending.length}. Devam etmek için tekrar bas.` : "Tüm onaylı katılımcılar bilgilendirildi.");
+    if (failed) parts.push(`${failed} gönderim başarısız (en fazla ${MAX_UPDATE_ATTEMPTS} kez yeniden denenir).`);
+    if (after.sendable.length > 0) parts.push(`Kalan: ${after.sendable.length}. Devam etmek için tekrar bas.`);
+    else if (after.stuck > 0) parts.push(`${after.stuck} kişiye ulaşılamadı; "Başarısız e-postaları göster" ile kontrol et.`);
+    else parts.push("Tüm onaylı katılımcılar bilgilendirildi.");
     return { ok: failed === 0, message: parts.join(" ") };
   } catch (e) {
     return fail(e);
