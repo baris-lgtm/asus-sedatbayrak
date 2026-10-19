@@ -38,9 +38,13 @@ test("kamerayla QR okutma: giriş kaydedilir, aynı QR ikinci kez engellenir", a
     await expect(door.getByText("Giriş onaylandı")).toBeVisible({ timeout: 20_000 });
     await expect(door.getByText("Kamera Testi — Öğrenci")).toBeVisible();
 
-    // Kamera aynı QR'ı görmeye devam eder → sonraki okutmalar "daha önce" der
+    // Kamera aynı kişiye bakmaya devam ederken ekran "onaylandı"dan uyarıya DÖNMEMELİ
+    await door.waitForTimeout(3000);
+    await expect(door.getByText("Bu katılımcının girişi daha önce yapılmış")).toHaveCount(0);
+
+    // "Sonraki katılımcı" sonrası aynı QR tekrar okunursa: alarm değil, "az önce giriş yaptı"
     await door.getByRole("button", { name: "Sonraki katılımcı" }).click();
-    await expect(door.getByText("Bu katılımcının girişi daha önce yapılmış")).toBeVisible({ timeout: 20_000 });
+    await expect(door.getByText("Bu katılımcı az önce giriş yaptı")).toBeVisible({ timeout: 20_000 });
 
     const { data } = await service().from("invitations").select("checked_in_at").eq("application_id", a.id);
     expect(data).toHaveLength(1);

@@ -4,7 +4,10 @@
  *  - CSV/formül enjeksiyonuna karşı: = + - @ TAB CR ile başlayan hücrelerin başına ' eklenir
  *    (Excel/Sheets bu hücreleri formül olarak çalıştırmaz).
  *  - Excel'in Türkçe karakterleri doğru açması için UTF-8 BOM eklenir.
+ *  - Ayraç ";" — Türkçe bölgesel ayarlı Excel virgülü ondalık ayırıcı sayar ve
+ *    virgüllü dosyayı tek sütunda açar; ";" ile doğrudan sütunlara ayrılır.
  */
+export const CSV_SEPARATOR = ";";
 const DANGEROUS_PREFIX = /^[=+\-@\t\r]/;
 
 export function sanitizeCsvCell(value: unknown): string {
@@ -21,9 +24,9 @@ export interface CsvColumn<T> {
 }
 
 export function toCsv<T>(rows: readonly T[], columns: readonly CsvColumn<T>[]): string {
-  const lines = [columns.map((c) => sanitizeCsvCell(c.header)).join(",")];
+  const lines = [columns.map((c) => sanitizeCsvCell(c.header)).join(CSV_SEPARATOR)];
   for (const row of rows) {
-    lines.push(columns.map((c) => sanitizeCsvCell(c.value(row))).join(","));
+    lines.push(columns.map((c) => sanitizeCsvCell(c.value(row))).join(CSV_SEPARATOR));
   }
   return "﻿" + lines.join("\r\n") + "\r\n";
 }

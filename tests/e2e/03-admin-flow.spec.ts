@@ -241,8 +241,8 @@ test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
 
     await page.reload();
     await page.getByRole("button", { name: "Başvuruyu kalıcı olarak sil" }).click();
-    await expect(page.getByText("Silmeyi onaylamak için kutuya SIL yaz.")).toBeVisible();
-    await page.getByLabel(/Onaylamak için/).fill("SIL");
+    await expect(page.getByText("Silmeyi onaylamak için kutuya SİL yaz.")).toBeVisible();
+    await page.getByLabel(/Onaylamak için/).fill("sil");
     await page.getByRole("button", { name: "Başvuruyu kalıcı olarak sil" }).click();
     await expect(page).toHaveURL(/\/admin\?silindi=1$/);
     await expect(page.getByText("Başvuru ve ilişkili tüm kayıtlar kalıcı olarak silindi.")).toBeVisible();
@@ -278,6 +278,7 @@ test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
     try {
       // Bütün onaylı katılımcılar bilgilenene kadar (25'erli turlar)
       for (let round = 0; round < 10; round++) {
+        await expect(page.getByText(/onaylı katılımcı bilgilendirildi/)).toBeVisible(); // akış (streaming) tamamlansın
         const button = page.getByRole("button", { name: /Bilgilendirme gönder/ });
         if ((await button.count()) === 0) break;
         await button.click();
@@ -301,6 +302,7 @@ test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
       await expect(page.getByText(/onaylandı/).first()).toBeVisible();
       expect(mailsTo(late.email, "invitation")[0].text).toContain("31 Ekim 2026 Cumartesi");
       await page.goto("/admin/ayarlar");
+      await expect(page.getByText(/onaylı katılımcı bilgilendirildi/)).toBeVisible();
       await expect(page.getByRole("button", { name: /Bilgilendirme gönder/ })).toHaveCount(0);
       expect(mailsTo(late.email, "event_update")).toHaveLength(0);
     } finally {

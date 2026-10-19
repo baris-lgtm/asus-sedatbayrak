@@ -59,10 +59,11 @@ test.describe("Yetkilendirme", () => {
     expect(res.headers()["cache-control"]).toContain("no-store");
     const body = await res.text();
     expect(body.charCodeAt(0)).toBe(0xfeff);
-    expect(body).toContain("Ad,Soyad,E-posta,Telefon");
+    expect(body).toContain("Ad;Soyad;E-posta;Telefon");
+    expect(body).toContain(";0555 111 22 33;"); // okunaklı telefon, formül önlemi gerektirmez
     expect(body).toContain(`"'=HYPERLINK(""http://kotu.example"",""tikla"")"`);
     expect(body).toContain("'+Enjeksiyon");
-    expect(body).not.toMatch(/(^|,)=HYPERLINK/m);
+    expect(body).not.toMatch(/(^|;)=HYPERLINK/m);
   });
 });
 

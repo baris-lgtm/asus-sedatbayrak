@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { supabasePublicKey, supabaseUrl } from "@/lib/env";
+import { supabaseFetch } from "./fetch";
 
 /**
  * Oturumlu istemci (kullanıcının çerezleriyle). RLS ve veritabanı
@@ -12,6 +13,7 @@ import { supabasePublicKey, supabaseUrl } from "@/lib/env";
 export async function createSessionClient() {
   const cookieStore = await cookies();
   return createServerClient(supabaseUrl(), supabasePublicKey(), {
+    global: { fetch: supabaseFetch() },
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -27,9 +29,14 @@ export async function createSessionClient() {
   });
 }
 
-/** Oturumsuz public istemci (yalnızca herkese açık veriler: event_settings). */
-export function createPublicClient() {
+/**
+ * Oturumsuz public istemci (yalnızca herkese açık veriler: event_settings).
+ * cached=true yalnızca herkese açık sayfalar içindir (Next veri önbelleği, en çok 60 sn);
+ * admin işlemleri ve e-postalar her zaman güncel okur.
+ */
+export function createPublicClient({ cached = false }: { cached?: boolean } = {}) {
   return createClient(supabaseUrl(), supabasePublicKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: supabaseFetch({ fresh: !cached }) },
   });
 }

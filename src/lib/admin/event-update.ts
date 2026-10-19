@@ -26,41 +26,23 @@ export interface UpdateTarget {
 }
 
 /**
- * Onaylı (henüz giriş yapmamış), aktif davetiyesi olan katılımcılardan bu sürüm
- * için güncelleme e-postası BAŞARIYLA almamış olanlar. Oturumlu (admin) istemciyle
- * okunur → RLS geçerli.
+ * Onaylı (henüz giriş yapmamış), aktif davetiyesi olan katılımcılar ve bu bilgi
+ * sürümü için bilgilendirilip bilgilendirilmedikleri. Veritabanında hesaplanır
+ * (admin_event_update_targets): PostgREST satır sınırı yok, sıra sabit.
  */
-export async function pendingUpdateTargets(supabase: StaffSession["supabase"], settings: EventSettings) {
-  const version = eventInfoVersion(settings);
-  const { data: invitations, error } = await supabase
-    .from("invitations")
-    .select("id, application_id, applications!inner(status)")
-    .is("revoked_at", null)
-    .eq("applications.status", "approved")
-    .returns<{ id: string; application_id: string }[]>();
-  if (error) throw new Error(`Davetiyeler okunamadı (${error.code})`);
-
-  // Bilgilendirilmiş sayılır: bu sürüm için güncelleme almış VEYA güncel ayarlar
-  // kaydedildikten sonra davetiye e-postası (güncel bilgiyle) almış olanlar.
-  const { data: sent } = await supabase
-    .from("email_logs")
-    .select("application_id, email_type, dedupe_key, sent_at")
-    .in("email_type", ["invitation", "invitation_resend", "event_update"])
-    .eq("status", "sent")
-    .returns<{ application_id: string; email_type: string; dedupe_key: string | null; sent_at: string }[]>();
-  const done = new Set<string>();
-  const since = new Date(settings.updated_at).getTime();
-  for (const r of sent ?? []) {
-    const thisVersion = r.email_type === "event_update" && r.dedupe_key?.endsWith(`:${version}`);
-    const freshInvitation = r.email_type !== "event_update" && new Date(r.sent_at).getTime() >= since;
-    if (thisVersion || freshInvitation) done.add(r.application_id);
+export async function eventUpdateTargets(supabase: StaffSession["supabase"], version: string) {
+  // 1000 satırlık API sınırı için sayfalı okuma (400 kişide tek sayfa).
+  type Row = { application_id: string; invitation_id: string; informed: boolean };
+  const rows: Row[] = [];
+  for (let from = 0; from < 20_000; from += 1000) {
+    const { data, error } = await supabase.rpc("admin_event_update_targets", { p_version: version }).range(from, from + 999);
+    if (error) throw new Error(`Bilgilendirme listesi okunamadı (${error.code})`);
+    const page = (data ?? []) as Row[];
+    rows.push(...page);
+    if (page.length < 1000) break;
   }
-
-  const all = (invitations ?? []).map((i) => ({ applicationId: i.application_id, invitationId: i.id }));
-  return {
-    version,
-    total: all.length,
-    sent: all.filter((t) => done.has(t.applicationId)).length,
-    pending: all.filter((t) => !done.has(t.applicationId)),
-  };
+  const pending: UpdateTarget[] = rows
+    .filter((r) => !r.informed)
+    .map((r) => ({ applicationId: r.application_id, invitationId: r.invitation_id }));
+  return { total: rows.length, sent: rows.length - pending.length, pending };
 }

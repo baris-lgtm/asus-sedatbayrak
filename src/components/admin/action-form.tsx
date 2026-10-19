@@ -1,24 +1,52 @@
 "use client";
 
-import { createContext, useActionState, useContext, useState } from "react";
+import Link from "next/link";
+import { createContext, useActionState, useContext, useEffect, useState } from "react";
 import type { ActionState } from "@/app/admin/actions";
 
+const NETWORK_ERROR: ActionState = {
+  ok: false,
+  message: "Sunucuya ulaşılamadı. İşlem kaydedilmiş olabilir: sayfayı yenileyip durumu kontrol et, sonra gerekirse tekrar dene.",
+};
+
 /**
- * İşlem sonucu, işlemi yapan buton işlemden sonra kaybolsa bile (ör. "İncelemeye al"
- * sonrası) görünür kalsın diye ortak bir canlı bölgede gösterilir.
+ * Bir başvuru sayfasındaki tüm işlemler için ortak durum:
+ *  - Sonuç mesajı, işlemi yapan buton işlemden sonra kaybolsa bile görünür kalır.
+ *  - Bir işlem sürerken diğer işlem butonları da kilitlenir (ör. aynı anda onay + ret).
  */
-const FeedbackContext = createContext<((s: ActionState) => void) | null>(null);
+interface Feedback {
+  report: (s: ActionState) => void;
+  setBusy: (delta: 1 | -1) => void;
+  busy: boolean;
+}
+const FeedbackContext = createContext<Feedback | null>(null);
+
+function Message({ state }: { state: ActionState }) {
+  if (!state.message) return null;
+  return (
+    <p className={`border-l-4 px-3 py-2 text-sm ${state.ok === false ? "border-err bg-red-50 font-medium text-err" : "border-ok bg-green-50 text-ok"}`}>
+      {state.message}
+      {state.sessionExpired && (
+        <>
+          {" "}
+          <Link href="/admin/login" className="underline underline-offset-2">
+            Giriş yap
+          </Link>
+        </>
+      )}
+    </p>
+  );
+}
 
 export function ActionFeedbackProvider({ children }: { children: React.ReactNode }) {
   const [last, setLast] = useState<ActionState | null>(null);
+  const [busyCount, setBusyCount] = useState(0);
   return (
-    <FeedbackContext.Provider value={setLast}>
+    <FeedbackContext.Provider
+      value={{ report: setLast, setBusy: (d) => setBusyCount((c) => Math.max(0, c + d)), busy: busyCount > 0 }}
+    >
       <div aria-live="polite" role="status">
-        {last?.message && (
-          <p className={`border-l-4 px-3 py-2 text-sm ${last.ok === false ? "border-err bg-red-50 font-medium text-err" : "border-ok bg-green-50 text-ok"}`}>
-            {last.message}
-          </p>
-        )}
+        {last && <Message state={last} />}
       </div>
       {children}
     </FeedbackContext.Provider>
@@ -43,14 +71,26 @@ export function ActionForm({
   variant?: "primary" | "secondary" | "danger";
   notifyOption?: string;
 }) {
-  const report = useContext(FeedbackContext);
-  // Sonuç, işlemin kendisiyle aynı geçişte (transition) bildirilir; buton yeni durumda
-  // kaybolsa bile mesaj ortak alanda görünür.
+  const feedback = useContext(FeedbackContext);
+  // Sonuç, işlemin kendisiyle aynı geçişte bildirilir. Ağ kesintisi / sunucu zaman aşımı
+  // gibi durumlarda action fırlatır; bunu yakalayıp beyaz sayfa yerine mesaj gösteriyoruz.
   const [state, formAction, pending] = useActionState(async (prev: ActionState, fd: FormData) => {
-    const result = await action(prev, fd);
-    report?.(result);
+    let result: ActionState;
+    try {
+      result = await action(prev, fd);
+    } catch {
+      result = NETWORK_ERROR;
+    }
+    feedback?.report(result);
     return result;
   }, {});
+
+  const setBusy = feedback?.setBusy;
+  useEffect(() => {
+    if (!pending || !setBusy) return;
+    setBusy(1);
+    return () => setBusy(-1);
+  }, [pending, setBusy]);
 
   const cls =
     variant === "primary"
@@ -58,11 +98,16 @@ export function ActionForm({
       : variant === "danger"
         ? "btn border-err bg-paper text-err hover:bg-err hover:text-paper"
         : "btn btn-secondary";
+  const locked = pending || (feedback?.busy ?? false);
 
   return (
     <form
       action={formAction}
       onSubmit={(e) => {
+        if (locked) {
+          e.preventDefault();
+          return;
+        }
         if (confirmText && !window.confirm(confirmText)) e.preventDefault();
       }}
       className="space-y-2"
@@ -76,14 +121,10 @@ export function ActionForm({
           {notifyOption}
         </label>
       )}
-      <button type="submit" className={`${cls} w-full min-h-11 text-sm`} disabled={pending} aria-busy={pending}>
+      <button type="submit" className={`${cls} w-full min-h-11 text-sm`} disabled={locked} aria-busy={pending}>
         {pending ? (pendingLabel ?? "İşleniyor…") : label}
       </button>
-      {!report && state.message && (
-        <p aria-live="polite" className={`text-sm ${state.ok === false ? "font-medium text-err" : "text-ok"}`}>
-          {state.message}
-        </p>
-      )}
+      {!feedback && <div aria-live="polite"><Message state={state} /></div>}
     </form>
   );
 }

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { AuthorizationError, requireStaff } from "@/lib/auth";
+import { authErrorResponse, requireStaff } from "@/lib/auth";
 import { extractTokenFromScan, normalizeManualCode, sha256Hex } from "@/lib/server/invitation-token";
 import { hashKey, rateLimit } from "@/lib/rate-limit";
 import type { CheckInResult } from "@/lib/types";
@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
   try {
     staff = await requireStaff();
   } catch (e) {
-    const status = e instanceof AuthorizationError ? e.status : 500;
-    return NextResponse.json({ error: "Yetkisiz." }, { status });
+    const r = authErrorResponse(e);
+    return NextResponse.json(r.body, { status: r.status });
   }
 
   // Manuel kodun kaba kuvvetle denenmesine karşı personel başına limit.
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await staff.supabase.rpc("check_in", args);
   if (error) {
     console.error("[check-in] hata:", error.code);
-    return NextResponse.json({ error: "Kontrol yapılamadı. Tekrar dene." }, { status: 500 });
+    return NextResponse.json({ error: "Kontrol yapılamadı. Tekrar dene.", code: "transient" }, { status: 503 });
   }
   return NextResponse.json(data as CheckInResult, { headers: { "Cache-Control": "no-store" } });
 }

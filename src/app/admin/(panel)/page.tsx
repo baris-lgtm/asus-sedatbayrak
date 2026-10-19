@@ -18,6 +18,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const stats = statsData as AdminStats | null;
   const emails = await latestEmailStatus(admin.supabase, list.rows.map((r) => r.id));
   const totalPages = Math.max(1, Math.ceil(list.total / PAGE_SIZE));
+  params.page = list.page; // aralık dışı sayfa istendiyse son sayfaya düzeltildi
 
   const qs = (overrides: Record<string, string | number>) => {
     const u = new URLSearchParams();
@@ -26,6 +27,9 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
     const s = u.toString();
     return s ? `?${s}` : "";
   };
+
+  const backQs = qs({}).slice(1);
+  const detailHref = (id: string) => `/admin/basvurular/${id}${backQs ? `?geri=${encodeURIComponent(backQs)}` : ""}`;
 
   const exportQs = new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.status !== "all" ? { status: params.status } : {}), sort: params.sort });
 
@@ -125,7 +129,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                     return (
                       <tr key={r.id} className="border-b border-rule hover:bg-mist">
                         <td className="px-3 py-3">
-                          <Link href={`/admin/basvurular/${r.id}`} className="font-semibold underline-offset-4 hover:underline">
+                          <Link href={detailHref(r.id)} className="font-semibold underline-offset-4 hover:underline">
                             {r.first_name} {r.last_name}
                           </Link>
                           <span className="block text-xs text-graphite">{PARTICIPANT_LABELS[r.participant_type]}</span>
@@ -159,7 +163,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                 const e = emails.get(r.id);
                 return (
                   <li key={r.id}>
-                    <Link href={`/admin/basvurular/${r.id}`} className="block border border-rule bg-paper p-4 active:bg-mist">
+                    <Link href={detailHref(r.id)} className="block border border-rule bg-paper p-4 active:bg-mist">
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold">{r.first_name} {r.last_name}</span>
                         <StatusBadge status={r.status} />

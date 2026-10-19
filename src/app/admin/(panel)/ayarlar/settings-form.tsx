@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import { updateSettingsAction, type ActionState } from "@/app/admin/actions";
 import type { EventSettings } from "@/lib/types";
 
@@ -29,9 +29,25 @@ function Check({ name, label, defaultChecked, hint }: { name: string; label: str
 }
 
 export function SettingsForm({ initial }: { initial: Initial }) {
-  const [state, action, pending] = useActionState<ActionState, FormData>(updateSettingsAction, {});
+  const [state, action, pending] = useActionState<ActionState, FormData>(async (prev, fd) => {
+    try {
+      return await updateSettingsAction(prev, fd);
+    } catch {
+      return { ok: false, message: "Sunucuya ulaşılamadı. Ayarlar kaydedilmemiş olabilir; sayfayı yenileyip kontrol et." };
+    }
+  }, {});
   return (
-    <form action={action} className="space-y-8">
+    <form
+      // <form action> React 19'da gönderimden sonra alanları sıfırlar; hata durumunda
+      // admin'in girdiği değerler kaybolmasın diye gönderimi elle yapıyoruz.
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (pending) return;
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => action(fd));
+      }}
+      className="space-y-8"
+    >
       <fieldset className="space-y-5 border border-rule bg-paper p-5">
         <legend className="px-1 text-lg font-bold">Genel</legend>
         <Text name="event_name" label="Etkinlik adı" defaultValue={initial.event_name} required maxLength={120} />

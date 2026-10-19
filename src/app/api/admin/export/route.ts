@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AuthorizationError, requireAdmin } from "@/lib/auth";
-import { applicationsQuery, parseListParams, type ListedApplication } from "@/lib/admin/queries";
+import { authErrorResponse, requireAdmin } from "@/lib/auth";
+import { allApplications, parseListParams, type ListedApplication } from "@/lib/admin/queries";
 import { toCsv } from "@/lib/csv";
+import { displayPhone } from "@/lib/phone";
 import { formatDateTime } from "@/lib/format";
 import { PARTICIPANT_LABELS, STATUS_LABELS } from "@/lib/types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -16,20 +17,24 @@ export async function GET(req: NextRequest) {
   try {
     admin = await requireAdmin();
   } catch (e) {
-    const status = e instanceof AuthorizationError ? e.status : 500;
-    return NextResponse.json({ error: status === 401 ? "Oturum açmalısın." : "Bu işlem için yetkin yok." }, { status });
+    const r = authErrorResponse(e);
+    return NextResponse.json(r.body, { status: r.status });
   }
 
   const params = parseListParams(Object.fromEntries(req.nextUrl.searchParams));
-  const { data, error } = await applicationsQuery(admin.supabase, params).range(0, 9999).returns<ListedApplication[]>();
-  if (error) return NextResponse.json({ error: "Veriler okunamadı." }, { status: 500 });
+  let data: ListedApplication[];
+  try {
+    data = await allApplications(admin.supabase, params);
+  } catch {
+    return NextResponse.json({ error: "Veriler okunamadı. Tekrar dene." }, { status: 503 });
+  }
 
   const q = eventContent.additionalQuestion;
-  const csv = toCsv(data ?? [], [
+  const csv = toCsv(data, [
     { header: "Ad", value: (r) => r.first_name },
     { header: "Soyad", value: (r) => r.last_name },
     { header: "E-posta", value: (r) => r.email },
-    { header: "Telefon", value: (r) => r.phone },
+    { header: "Telefon", value: (r) => displayPhone(r.phone) },
     { header: "Katılımcı tipi", value: (r) => PARTICIPANT_LABELS[r.participant_type] },
     { header: "Kurum", value: (r) => r.institution },
     { header: "Bölüm", value: (r) => r.department },
@@ -44,7 +49,7 @@ export async function GET(req: NextRequest) {
   await createAdminClient().from("admin_audit_logs").insert({
     admin_user_id: admin.userId,
     action: "export_csv",
-    metadata: { rows: data?.length ?? 0, status: params.status, has_query: params.q !== "" },
+    metadata: { rows: data.length, status: params.status, has_query: params.q !== "" },
   });
 
   const stamp = new Date().toISOString().slice(0, 10);

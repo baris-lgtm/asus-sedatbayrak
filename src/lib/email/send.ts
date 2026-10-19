@@ -27,8 +27,12 @@ interface SendArgs {
   type: EmailType;
   dedupeKey: string;
   to: string;
-  content: EmailContent;
-  attachments?: InlineAttachment[];
+  /**
+   * İçerik, kayıt sahiplenildikten SONRA üretilir: içerik hazırlanamazsa
+   * (ör. etkinlik ayarları okunamadı) gönderim 'failed' olarak loglanır ve
+   * admin panelinden tekrar denenebilir.
+   */
+  build: () => Promise<{ content: EmailContent; attachments?: InlineAttachment[] }>;
 }
 
 /**
@@ -77,6 +81,17 @@ export async function sendTransactional(args: SendArgs): Promise<SendOutcome> {
     if (error) console.error("[email] sonuç kaydedilemedi:", error.code);
   };
 
+  let content: EmailContent;
+  let attachments: InlineAttachment[] | undefined;
+  try {
+    ({ content, attachments } = await args.build());
+  } catch (e) {
+    const msg = `İçerik hazırlanamadı: ${e instanceof Error ? e.message : "bilinmeyen hata"}`.slice(0, 900);
+    await finish(false, null, msg);
+    console.error("[email] içerik hazırlanamadı:", args.type);
+    return { status: "failed", error: msg };
+  }
+
   const sink = testSinkDir();
   if (sink) {
     const id = `test-sink:${randomUUID()}`;
@@ -88,9 +103,9 @@ export async function sendTransactional(args: SendArgs): Promise<SendOutcome> {
         id,
         to: args.to,
         type: args.type,
-        subject: args.content.subject,
-        text: args.content.text,
-        attachments: (args.attachments ?? []).map((a) => ({ filename: a.filename, contentId: a.contentId, bytes: a.content.length })),
+        subject: content.subject,
+        text: content.text,
+        attachments: (attachments ?? []).map((a) => ({ filename: a.filename, contentId: a.contentId, bytes: a.content.length })),
       }),
       );
     } catch {
@@ -114,10 +129,10 @@ export async function sendTransactional(args: SendArgs): Promise<SendOutcome> {
         from: process.env.EMAIL_FROM as string,
         to: args.to,
         replyTo: process.env.EMAIL_REPLY_TO || undefined,
-        subject: args.content.subject,
-        html: args.content.html,
-        text: args.content.text,
-        attachments: args.attachments?.map((a) => ({
+        subject: content.subject,
+        html: content.html,
+        text: content.text,
+        attachments: attachments?.map((a) => ({
           filename: a.filename,
           content: a.content,
           contentType: a.contentType,

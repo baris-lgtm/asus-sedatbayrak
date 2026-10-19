@@ -13,7 +13,8 @@ import {
   sha256Hex,
 } from "../../src/lib/server/invitation-token";
 import { sanitizeCsvCell, toCsv } from "../../src/lib/csv";
-import { normalizePhone } from "../../src/lib/phone";
+import { displayPhone, normalizePhone } from "../../src/lib/phone";
+import { searchTerms, trFold } from "../../src/lib/admin/queries";
 
 const SECRET = "test-secret-test-secret-test-secret-123456";
 
@@ -86,7 +87,7 @@ test("CSV çıktısı BOM + başlık + satırlar", () => {
     { header: "Not", value: (r) => r.not },
   ]);
   assert.ok(csv.startsWith("﻿"));
-  assert.equal(csv, "﻿Ad,Not\r\nŞule,'=1+1\r\n");
+  assert.equal(csv, "﻿Ad;Not\r\nŞule;'=1+1\r\n");
 });
 
 test("Telefon normalize", () => {
@@ -100,4 +101,30 @@ test("Telefon normalize", () => {
   assert.equal(normalizePhone("0555abc"), null);
   // DB kısıtı: ^\+?[0-9]{10,15}$
   assert.match(normalizePhone("05551112233")!, /^\+?[0-9]{10,15}$/);
+});
+
+test("CSV ayracı ';' — noktalı virgül içeren hücre tırnaklanır", () => {
+  assert.equal(sanitizeCsvCell("a;b"), `"a;b"`);
+});
+
+test("Türkçe katlama: büyük/küçük ve aksan farkı yok", () => {
+  assert.equal(trFold("İLKER Işık ÇAĞRI ılgaz ŞULE Öykü Ümit"), "ilker isik cagri ilgaz sule oyku umit");
+  assert.equal(trFold("IŞIK"), trFold("ışık"));
+  assert.equal(trFold("İlker"), trFold("ilker"));
+});
+
+test("Arama terimleri: filtre sözdizimi ve LIKE jokerleri temizlenir; telefon birleştirilir", () => {
+  assert.deepEqual(searchTerms("Mimarlık,"), ["mimarlik"]);
+  assert.deepEqual(searchTerms("x),id.eq.1"), ["x", "id.eq.1"]);
+  assert.deepEqual(searchTerms("%_*"), []);
+  assert.deepEqual(searchTerms("0555 100 00 12"), ["5551000012"]);
+  assert.deepEqual(searchTerms("+90 555 100 00 12"), ["5551000012"]);
+  assert.deepEqual(searchTerms("kisi12@ornek.com"), ["kisi12@ornek.com"]);
+  assert.equal(searchTerms("a b c d e f").length, 4);
+});
+
+test("Telefon görüntüleme", () => {
+  assert.equal(displayPhone("+905551112233"), "0555 111 22 33");
+  assert.equal(displayPhone("+442079460958"), "00442079460958");
+  assert.ok(!/^[=+\-@]/.test(displayPhone("+905551112233")), "CSV'de formül önlemi gerektirmez");
 });

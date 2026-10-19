@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { applicationSchema, flattenErrors } from "@/lib/validation/application";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getEventSettings } from "@/lib/event-settings";
+import { getEventSettingsStrict } from "@/lib/event-settings";
 import { clientIp, hashKey, rateLimit } from "@/lib/rate-limit";
 import { sendApplicationReceived } from "@/lib/email/notifications";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -71,7 +71,13 @@ export async function POST(req: NextRequest) {
       return json(400, { code: "captcha", message: "Güvenlik doğrulaması başarısız. Sayfayı yenileyip tekrar dene." });
     }
 
-    const settings = await getEventSettings();
+    // Güncel ayarlar (KVKK metin sürümü, başvuruların açık olup olmadığı) — önbelleksiz.
+    let settings;
+    try {
+      settings = await getEventSettingsStrict();
+    } catch {
+      return json(503, { code: "unavailable", message: "Başvuru sistemine şu an ulaşılamıyor. Lütfen birkaç dakika sonra tekrar dene." });
+    }
     if (!settings.applications_open) {
       return json(403, { code: "closed", message: "Başvurular şu anda kapalı." });
     }

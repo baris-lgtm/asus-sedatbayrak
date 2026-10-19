@@ -314,4 +314,75 @@ select tests.ok((select count(*) = 1 from public.admin_audit_logs where action='
                    and metadata::text not like '%@%' and application_id is null), 'denetim kaydı var ve kişisel veri içermiyor');
 select tests.ok((select count(*) = 1 from public.email_logs where email_type='event_update'), 'event_update e-posta türü kullanılabiliyor');
 
+\echo '--- 17. Türkçe arama katlaması'
+select tests.ok(public.tr_fold('İLKER Işık ÇAĞRI ılgaz ŞULE Öykü Ümit') = 'ilker isik cagri ilgaz sule oyku umit', 'tr_fold Türkçe harfleri katlıyor');
+set role service_role;
+insert into public.applications (first_name, last_name, email, phone, participant_type, institution, department, kvkk_notice_version)
+values ('Işıl', 'Çağlar', 'isil@example.com', '+905551112233', 'student', 'İTÜ', 'İç Mimarlık', 'v');
+reset role;
+select tests.ok((select count(*) = 1 from public.applications where search_text like '%' || public.tr_fold('IŞIL') || '%'), 'IŞIL araması Işıl''ı buluyor');
+select tests.ok((select count(*) = 1 from public.applications where search_text like '%' || public.tr_fold('ic mimarlik') || '%'), 'bölüm alanında aksansız arama');
+set role anon;
+select tests.expect_error($$select search_text from public.applications$$, 'permission denied', 'anon search_text okuyamaz');
+reset role;
+
+\echo '--- 18. info_changed_at yalnızca tarih/mekân değişince ilerler'
+update public.event_settings set info_changed_at = now() - interval '1 hour' where id = 1;
+update public.event_settings set capacity = capacity + 1 where id = 1;
+select tests.ok((select info_changed_at < now() - interval '30 minutes' from public.event_settings), 'kapasite değişince info_changed_at sabit');
+update public.event_settings set venue_name = 'Yeni Mekân' where id = 1;
+select tests.ok((select info_changed_at > now() - interval '1 minute' from public.event_settings), 'mekân değişince info_changed_at ilerledi');
+
+\echo '--- 19. Bilgilendirme hedefleri (SQL, satır sınırı yok)'
+set role service_role;
+select tests.apply('hedef' || g || '@example.com') from generate_series(1, 5) g;
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select public.admin_approve((select id from public.applications where email = 'hedef' || g || '@example.com'),
+       gen_random_uuid(), tests.h('hq' || g), tests.h('hc' || g)) from generate_series(1, 5) g;
+reset role;
+-- İlk 2 kişiye davetiye bilgi değişiminden ÖNCE gitmiş, 3. kişiye SONRA gitmiş, 4. kişi bu sürümün güncellemesini almış.
+update public.event_settings set info_changed_at = now() where id = 1;
+insert into public.email_logs (application_id, invitation_id, email_type, dedupe_key, status, sent_at)
+select a.id, i.id, 'invitation', 'invitation:' || i.id, 'sent', now() - interval '1 day'
+  from public.applications a join public.invitations i on i.application_id = a.id and i.revoked_at is null
+ where a.email in ('hedef1@example.com', 'hedef2@example.com')
+on conflict (dedupe_key) do update set sent_at = excluded.sent_at, status = 'sent';
+insert into public.email_logs (application_id, invitation_id, email_type, dedupe_key, status, sent_at)
+select a.id, i.id, 'invitation', 'invitation:' || i.id, 'sent', now() + interval '1 second'
+  from public.applications a join public.invitations i on i.application_id = a.id and i.revoked_at is null
+ where a.email = 'hedef3@example.com'
+on conflict (dedupe_key) do update set sent_at = excluded.sent_at, status = 'sent';
+insert into public.email_logs (application_id, email_type, dedupe_key, status, sent_at)
+select id, 'event_update', 'event_update:' || id || ':abcdef0123456789', 'sent', now() - interval '1 day'
+  from public.applications where email = 'hedef4@example.com';
+-- 1500 ilgisiz e-posta kaydı (eski uygulamadaki 1000 satır sınırı hatasını yakalamak için)
+insert into public.email_logs (application_id, email_type, dedupe_key, status, sent_at)
+select (select id from public.applications where email = 'hedef5@example.com'), 'application_received', 'noise:' || g, 'sent', now()
+  from generate_series(1, 1500) g;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok((select bool_and(informed) from public.admin_event_update_targets('abcdef0123456789') t
+                   join public.applications a on a.id = t.application_id where a.email in ('hedef3@example.com', 'hedef4@example.com')),
+                'güncel davetiye alan ve bu sürümü alan kişiler bilgilendirilmiş sayılıyor');
+select tests.ok((select not bool_or(informed) from public.admin_event_update_targets('abcdef0123456789') t
+                   join public.applications a on a.id = t.application_id where a.email in ('hedef1@example.com', 'hedef2@example.com', 'hedef5@example.com')),
+                'eski davetiye alanlar ve hiç almayan bekliyor (1500 ilgisiz kayıt sonucu bozmuyor)');
+select tests.ok((select not bool_or(informed) from public.admin_event_update_targets('0000000000000000') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hedef4@example.com'),
+                'farklı bilgi sürümünde eski güncelleme sayılmıyor');
+select tests.expect_error($$select * from public.admin_event_update_targets('kotu; drop')$$, 'ERR_BAD_REQUEST', 'geçersiz sürüm reddediliyor');
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error($$select * from public.admin_event_update_targets('abcdef0123456789')$$, 'ERR_FORBIDDEN', 'kapı ekibi hedef listesini göremez');
+reset role;
+
+\echo '--- 20. check_in tekrarında "az önce" bilgisi'
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select public.check_in(tests.h('hq1'), null);
+select tests.ok((select (r->>'by_me')::boolean and (r->>'seconds_ago')::int < 5 from (select public.check_in(tests.h('hq1'), null) r) x),
+                'aynı personel tekrar okutunca by_me=true ve seconds_ago döner');
+reset role;
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

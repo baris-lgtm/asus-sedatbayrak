@@ -124,6 +124,8 @@ export interface EventSettings {
   marketing_consent_version: string;
   retention_days: number;
   updated_at: string;
+  /** Yalnızca katılımcıya gösterilen tarih/mekân bilgisi değişince ilerler. */
+  info_changed_at: string;
 }
 
 export interface AdminStats {
@@ -141,7 +143,7 @@ export interface AdminStats {
 
 export type CheckInResult =
   | { result: "ok"; first_name: string; last_name: string; participant_type: ParticipantType; checked_in_at: string }
-  | { result: "already"; first_name: string; last_name: string; checked_in_at: string }
+  | { result: "already"; first_name: string; last_name: string; checked_in_at: string; by_me?: boolean; seconds_ago?: number }
   | { result: "revoked" }
   | { result: "not_approved" }
   | { result: "invalid" };

@@ -31,17 +31,28 @@ test.describe("Check-in", () => {
     const { data: first } = await service().from("invitations").select("checked_in_at, checked_in_by").eq("application_id", app.id).single();
     expect(first?.checked_in_at).not.toBeNull();
 
-    await page.waitForTimeout(1600);
+    // Aynı cihazdan hemen tekrar: alarm yok, "az önce giriş yaptı" (giriş geçerli)
+    await page.waitForTimeout(800);
+    await expect(input).toBeFocused(); // elle girişte odak kod alanında kalır (mobil klavye kapanmaz)
     await input.fill(code);
     await page.getByRole("button", { name: "Kontrol et" }).click();
-    await expect(page.getByText("Bu katılımcının girişi daha önce yapılmış")).toBeVisible();
+    await expect(page.getByText("Bu katılımcı az önce giriş yaptı")).toBeVisible();
+
+    // BAŞKA bir cihazdan (ör. ikinci kapı) aynı kod: uyarı
+    const other = await browser.newContext({ baseURL: "http://localhost:3000" });
+    const otherPage = await other.newPage();
+    await uiLogin(otherPage, USERS.door);
+    await otherPage.getByLabel("Giriş kodu", { exact: true }).fill(code);
+    await otherPage.getByRole("button", { name: "Kontrol et" }).click();
+    await expect(otherPage.getByText("Bu katılımcının girişi daha önce yapılmış")).toBeVisible();
+    await other.close();
 
     const { data: second } = await service().from("invitations").select("checked_in_at, checked_in_by").eq("application_id", app.id).single();
     expect(second).toEqual(first); // ilk kayıt değişmedi
     const { data: a2 } = await service().from("applications").select("status").eq("id", app.id).single();
     expect(a2?.status).toBe("checked_in");
 
-    await page.waitForTimeout(1600);
+    await page.waitForTimeout(800);
     await input.fill("ZZZZ-ZZZZ-ZZ");
     await page.getByRole("button", { name: "Kontrol et" }).click();
     await expect(page.getByText("Geçersiz kod")).toBeVisible();

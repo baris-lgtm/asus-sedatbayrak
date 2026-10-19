@@ -4,14 +4,17 @@ import type { EventSettings } from "@/lib/types";
 import { SettingsForm } from "./settings-form";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
 import { sendEventUpdatesAction } from "@/app/admin/actions";
-import { pendingUpdateTargets } from "@/lib/admin/event-update";
+import { eventInfoVersion, eventUpdateTargets } from "@/lib/admin/event-update";
+
+// Bu sayfadaki server action'ların azami süresi (sn). Bilgilendirme turu (20 e-posta) ~15 sn sürer; Vercel varsayılanı eski projelerde 10–15 sn olabilir.
+export const maxDuration = 60;
 
 export default async function SettingsPage() {
   const { supabase } = await requireAdminPage();
   const { data } = await supabase.from("event_settings").select("*").eq("id", 1).single<EventSettings>();
   if (!data) return <p>Ayarlar okunamadı.</p>;
   const canNotify = data.date_confirmed || data.venue_confirmed;
-  const progress = canNotify ? await pendingUpdateTargets(supabase, data) : null;
+  const progress = canNotify ? await eventUpdateTargets(supabase, eventInfoVersion(data)) : null;
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -48,7 +51,7 @@ export default async function SettingsPage() {
                 <ActionForm
                   action={sendEventUpdatesAction}
                   fields={{}}
-                  label={`Bilgilendirme gönder (en fazla 25 kişi)`}
+                  label="Bilgilendirme gönder (20 kişilik tur)"
                   pendingLabel="Gönderiliyor…"
                   variant="primary"
                   confirmText={`${progress.pending.length} katılımcıya güncel tarih/mekân e-postası gönderilsin mi?`}

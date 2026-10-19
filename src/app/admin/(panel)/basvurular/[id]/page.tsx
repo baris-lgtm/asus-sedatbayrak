@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { z } from "zod";
 import { requireAdminPage } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
-import { EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, type Application, type EmailLog, type Invitation } from "@/lib/types";
+import { EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, STATUS_LABELS, type Application, type EmailLog, type Invitation } from "@/lib/types";
 import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
 import { DeleteApplicationForm } from "@/components/admin/delete-form";
@@ -16,20 +16,47 @@ import {
 } from "@/app/admin/actions";
 import { eventContent } from "@/config/event";
 
+// Bu sayfadaki server action'ların azami süresi (sn). Onay + davetiye e-postası birkaç saniye sürer; kısa varsayılan sürelere karşı pay.
+export const maxDuration = 30;
+
 const ACTION_LABELS: Record<string, string> = {
   status_change: "Durum değişti",
   approve: "Onaylandı",
   reissue_invitation: "Davetiye yeniden oluşturuldu",
   resend_invitation: "Davetiye tekrar gönderildi",
   check_in: "Giriş yapıldı",
+  export_csv: "CSV indirildi",
 };
 
-export default async function ApplicationDetail({ params }: { params: Promise<{ id: string }> }) {
+const STATUS_TEXT: Record<string, string> = STATUS_LABELS;
+
+/** Listeye dönüş bağlantısı: yalnızca bilinen filtre parametreleri taşınır. */
+function backHref(geri: string | string[] | undefined): string {
+  const raw = Array.isArray(geri) ? geri[0] : geri;
+  if (!raw) return "/admin";
+  const src = new URLSearchParams(raw);
+  const out = new URLSearchParams();
+  for (const k of ["q", "status", "sort", "page"]) {
+    const v = src.get(k);
+    if (v) out.set(k, v.slice(0, 80));
+  }
+  const s = out.toString();
+  return s ? `/admin?${s}` : "/admin";
+}
+
+export default async function ApplicationDetail({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const back = backHref((await searchParams).geri);
   if (!z.uuid().safeParse(id).success) notFound();
   const { supabase } = await requireAdminPage();
 
-  const [{ data: app }, { data: invitations }, { data: emails }, { data: audit }] = await Promise.all([
+  const [appRes, invRes, emailRes, auditRes] = await Promise.all([
     supabase.from("applications").select("*").eq("id", id).maybeSingle<Application>(),
     supabase
       .from("invitations")
@@ -46,11 +73,20 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
       .limit(30)
       .returns<{ id: number; action: string; metadata: Record<string, unknown>; created_at: string }[]>(),
   ]);
+  // Geçici bağlantı hatasında "bulunamadı" demek yerine hata sınırına (error.tsx) düş.
+  for (const r of [appRes, invRes, emailRes, auditRes]) {
+    if (r.error) throw new Error(`Başvuru detayı okunamadı (${r.error.code})`);
+  }
+  const app = appRes.data;
+  const invitations = invRes.data;
+  const emails = emailRes.data;
+  const audit = auditRes.data;
   if (!app) notFound();
 
   const active = invitations?.find((i) => !i.revoked_at) ?? null;
   const s = app.status;
-  const canApprove = ["pending", "reviewing", "waitlisted"].includes(s);
+  // "approved" ama aktif davetiyesi yoksa (beklenmeyen durum) onay butonu davetiyeyi onarır.
+  const canApprove = ["pending", "reviewing", "waitlisted"].includes(s) || (s === "approved" && !active);
   const canReview = ["pending", "waitlisted", "rejected"].includes(s);
   const canWaitlist = ["pending", "reviewing", "rejected"].includes(s);
   const canReject = ["pending", "reviewing", "waitlisted"].includes(s);
@@ -60,7 +96,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
   const rows: [string, React.ReactNode][] = [
     ["E-posta", <a key="e" href={`mailto:${app.email}`} className="break-all underline">{app.email}</a>],
     ["Telefon", <a key="t" href={`tel:${app.phone}`} className="underline tabular-nums">{app.phone}</a>],
-    ["Durum", PARTICIPANT_LABELS[app.participant_type]],
+    ["Katılımcı tipi", PARTICIPANT_LABELS[app.participant_type]],
     ["Kurum / üniversite", app.institution],
     ["Bölüm / uzmanlık", app.department],
     ["Başvuru tarihi", formatDateTime(app.created_at)],
@@ -71,7 +107,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
 
   return (
     <div className="space-y-6">
-      <Link href="/admin" className="text-sm underline underline-offset-4">Başvurulara dön</Link>
+      <Link href={back} className="text-sm underline underline-offset-4">Başvurulara dön</Link>
 
       <div className="flex flex-wrap items-center gap-4">
         <h1 className="display text-4xl">{app.first_name} {app.last_name}</h1>
@@ -152,7 +188,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
                 {audit.map((a) => (
                   <li key={a.id}>
                     <span className="tabular-nums text-graphite">{formatDateTime(a.created_at)}</span> — {ACTION_LABELS[a.action] ?? a.action}
-                    {a.action === "status_change" && typeof a.metadata?.to === "string" && <> ({String(a.metadata.from)} → {a.metadata.to})</>}
+                    {a.action === "status_change" && typeof a.metadata?.to === "string" && <> ({STATUS_TEXT[String(a.metadata.from)] ?? String(a.metadata.from)} → {STATUS_TEXT[a.metadata.to] ?? a.metadata.to})</>}
                   </li>
                 ))}
               </ul>
@@ -168,7 +204,7 @@ export default async function ApplicationDetail({ params }: { params: Promise<{ 
             <ActionForm
               action={approveAction}
               fields={{ id }}
-              label="Onayla ve davetiye gönder"
+              label={s === "approved" ? "Davetiye oluştur ve gönder" : "Onayla ve davetiye gönder"}
               pendingLabel="Onaylanıyor…"
               variant="primary"
               confirmText={`${app.first_name} ${app.last_name} onaylansın ve QR davetiyesi gönderilsin mi?`}
