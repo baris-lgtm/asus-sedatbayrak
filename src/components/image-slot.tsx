@@ -38,9 +38,12 @@ export function ImageSlot({
       aria-label={`${slot.alt} (görsel henüz eklenmedi)`}
       className={`${dark ? "image-slot-dark text-neutral-400" : "image-slot text-graphite/80"} relative overflow-hidden ${radius} ${className}`}
     >
-      <span className={`absolute bottom-3 ${labelRight ? "right-4 text-right" : "left-3"} max-w-[30ch] text-[10px] font-medium uppercase leading-snug tracking-[0.18em]`}>
-        {slot.placeholderLabel}
-      </span>
+      {/* Hangi görselin bekleneceği yalnızca geliştirmede yazılır; canlıda sade yüzey kalır. */}
+      {process.env.NODE_ENV !== "production" && (
+        <span className={`absolute bottom-3 ${labelRight ? "right-4 text-right" : "left-3"} max-w-[30ch] text-[10px] font-medium uppercase leading-snug tracking-[0.18em]`}>
+          {slot.placeholderLabel}
+        </span>
+      )}
     </div>
   );
 }
