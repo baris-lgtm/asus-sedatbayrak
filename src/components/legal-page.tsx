@@ -1,15 +1,11 @@
-import Link from "next/link";
 import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 /** Hukuk onaylı metin gelene kadar açıkça TASLAK olarak işaretlenen yasal sayfa iskeleti. */
 export function LegalPage({ title, version, sections }: { title: string; version: string; sections: string[] }) {
   return (
     <>
-      <header className="bg-ink text-paper">
-        <div className="mx-auto flex h-14 max-w-4xl items-center px-4 sm:px-8">
-          <Link href="/" className="condensed text-lg font-bold">ASUS × Sedat Bayrak</Link>
-        </div>
-      </header>
+      <SiteHeader showNav={false} />
       <main id="icerik" className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
         <h1 className="display text-5xl sm:text-6xl">{title}</h1>
         <p className="mt-4 text-sm text-graphite">Metin sürümü: {version}</p>

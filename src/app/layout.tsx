@@ -1,14 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import { Geist, Newsreader } from "next/font/google";
 import { eventContent } from "@/config/event";
 import { siteUrl } from "@/lib/env";
 import { ConsentAndAnalytics } from "@/components/analytics";
 import "./globals.css";
 
-const archivo = Archivo({
+const geist = Geist({
   subsets: ["latin", "latin-ext"],
-  axes: ["wdth"],
-  variable: "--font-archivo",
+  variable: "--font-geist",
+  display: "swap",
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin", "latin-ext"],
+  axes: ["opsz"],
+  variable: "--font-newsreader",
   display: "swap",
 });
 
@@ -31,14 +37,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#f8f6f2",
   width: "device-width",
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className={archivo.variable}>
+    <html lang="tr" className={`${geist.variable} ${newsreader.variable}`}>
       <body className="min-h-dvh antialiased">
         <a
           href="#icerik"

@@ -11,8 +11,8 @@ test.describe("T16: mobil görünüm", () => {
   test("landing ve form mobilde kullanılabilir", async ({ page }) => {
     await page.goto("/");
     await noHorizontalScroll(page);
-    await page.getByRole("link", { name: "Workshop'a Başvur" }).first().click();
-    await expect(page.getByRole("heading", { name: "Başvuru formu" })).toBeInViewport();
+    await page.getByRole("link", { name: "Katılım için başvur" }).first().click();
+    await expect(page.getByRole("heading", { name: "Yerini ayır, yaratıcılığa katıl." })).toBeInViewport();
 
     const email = uniqueEmail("mobil");
     await page.getByLabel("Ad", { exact: true }).fill("Mobil");

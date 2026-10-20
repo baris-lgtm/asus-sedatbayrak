@@ -5,8 +5,8 @@ test.describe("Landing page ve başvuru formu", () => {
   test("ana sayfa tüm bölümleri gösterir ve placeholder'lar açıkça işaretli", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/ASUS × Sedat Bayrak Workshop/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Sedat Bayrak");
-    for (const h of ["Workshop deneyimi", "Sedat Bayrak", "ASUS ile üretim", "Katılım nasıl kesinleşir", "Başvuru formu", "Mekân ve ulaşım", "Sık sorulanlar"]) {
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Yaratıcılığın");
+    for (const h of ["Tasarımın arkasındaki düşünce", "Deneyimin üç boyutu", "Sedat Bayrak", "ASUS ile üretim", "Katılım nasıl kesinleşir", "Yerini ayır, yaratıcılığa katıl.", "Mekân ve ulaşım", "Merak edilenler."]) {
       await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
     }
     // Kesinleşmemiş bilgi gerçekmiş gibi gösterilmiyor

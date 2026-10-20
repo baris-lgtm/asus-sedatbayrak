@@ -1,23 +1,26 @@
 @import "tailwindcss";
 
 /*
- * Tasarım dili: "çizim paftası".
- * Siyah/beyaz, mimari çizimin ölçü çizgileri ve tek kontrollü vurgu: çizim mavisi.
- * Tek yazı ailesi (Archivo) — başlıklarda dar genişlik (wdth), metinde normal.
+ * Tasarım dili: "sakin stüdyo".
+ * Sıcak kırık beyaz zemin, taş tonları, koyu mürekkep metin ve tek vurgu: ASUS mavisi.
+ * Başlıklar serif (Newsreader, display optik boyutu), metin Geist.
  */
 @theme {
-  --color-ink: #000000;
-  --color-paper: #ffffff;
-  --color-graphite: #555555;
-  --color-mist: #f3f3f3;
-  --color-rule: #d6d6d6;
-  --color-blue: #1f44ff;
-  --color-blue-ink: #1430c7;
+  --color-ink: #171614;
+  --color-paper: #f8f6f2;
+  --color-surface: #ffffff;
+  --color-graphite: #5e5a54;
+  --color-mist: #f0ece6;
+  --color-stone: #e6e0d6;
+  --color-rule: #e2ddd4;
+  --color-blue: #0b3fcb;
+  --color-blue-ink: #082f9e;
   --color-ok: #0a7a3c;
   --color-warn: #8a5a00;
   --color-err: #c3141c;
 
-  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
@@ -30,7 +33,6 @@
     background: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-variation-settings: "wdth" 100;
     text-rendering: optimizeLegibility;
   }
   ::selection {
@@ -38,7 +40,7 @@
     color: #fff;
   }
   :focus-visible {
-    outline: 3px solid var(--color-blue);
+    outline: 2px solid var(--color-blue);
     outline-offset: 3px;
   }
   @media (prefers-reduced-motion: reduce) {
@@ -55,152 +57,153 @@
 }
 
 @layer components {
-  /* Dar, yoğun başlık kesimi */
+  /* Serif başlık kesimi */
   .display {
-    font-variation-settings: "wdth" 66;
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 0.88;
+    font-family: var(--font-serif);
+    font-optical-sizing: auto;
+    font-weight: 450;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
   }
   .condensed {
-    font-variation-settings: "wdth" 75;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
-  /* Ölçü çizgisi: iki ucunda tik olan ince çizgi (mimari çizim referansı) */
-  .dimension {
-    position: relative;
-    height: 1px;
-    background: currentColor;
-  }
-  .dimension::before,
-  .dimension::after {
-    content: "";
-    position: absolute;
-    top: -5px;
-    width: 1px;
-    height: 11px;
-    background: currentColor;
-  }
-  .dimension::before {
-    left: 0;
-  }
-  .dimension::after {
-    right: 0;
+  /* Geniş aralıklı küçük üst başlık */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--color-graphite);
   }
 
-  /* Görsel placeholder: köşe işaretli paftaya benzer kutu */
+  /* Görsel placeholder: taş tonlu, sessiz yüzey */
   .image-slot {
     position: relative;
-    background-color: var(--color-mist);
-    background-image:
-      linear-gradient(var(--color-rule) 1px, transparent 1px),
-      linear-gradient(90deg, var(--color-rule) 1px, transparent 1px);
-    background-size: 32px 32px;
-    background-position: -1px -1px;
+    background:
+      radial-gradient(120% 90% at 85% 15%, rgba(255, 255, 255, 0.75), transparent 60%),
+      linear-gradient(160deg, #ede8e0 0%, #ddd5c9 55%, #cfc6b8 100%);
   }
   .image-slot-dark {
-    background-color: #121212;
-    background-image:
-      linear-gradient(#262626 1px, transparent 1px),
-      linear-gradient(90deg, #262626 1px, transparent 1px);
-    background-size: 32px 32px;
+    background:
+      radial-gradient(120% 90% at 85% 15%, rgba(255, 255, 255, 0.08), transparent 60%),
+      linear-gradient(160deg, #2a2724 0%, #1d1b19 100%);
   }
 
   .field-input {
     width: 100%;
-    border: 0;
-    border-bottom: 2px solid var(--color-ink);
-    background: transparent;
-    padding: 0.6rem 0;
-    font-size: 1.0625rem;
-    border-radius: 0;
+    min-height: 2.875rem;
+    border: 1px solid var(--color-rule);
+    border-radius: 6px;
+    background: var(--color-surface);
+    padding: 0.6rem 0.85rem;
+    font-size: 1rem;
     appearance: none;
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  .field-input::placeholder {
+    color: #9b968e;
+  }
+  .field-input:hover {
+    border-color: #cbc4b8;
   }
   .field-input:focus {
     outline: none;
-    border-bottom-color: var(--color-blue);
-    box-shadow: 0 2px 0 0 var(--color-blue);
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(11, 63, 203, 0.14);
   }
   .field-input[aria-invalid="true"] {
-    border-bottom-color: var(--color-err);
+    border-color: var(--color-err);
   }
 
   .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    min-height: 3rem;
-    padding: 0 1.5rem;
-    font-weight: 700;
-    font-size: 1rem;
-    border: 2px solid var(--color-ink);
-    transition: background-color 120ms, color 120ms;
+    gap: 0.6rem;
+    min-height: 2.875rem;
+    padding: 0 1.4rem;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    border: 1px solid var(--color-ink);
+    border-radius: 6px;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
   }
   .btn-primary {
-    background: var(--color-ink);
-    color: var(--color-paper);
-  }
-  .btn-primary:hover {
     background: var(--color-blue);
     border-color: var(--color-blue);
+    color: #fff;
+  }
+  .btn-primary:hover {
+    background: var(--color-blue-ink);
+    border-color: var(--color-blue-ink);
   }
   .btn-secondary {
     background: transparent;
     color: var(--color-ink);
+    border-color: #cbc4b8;
   }
   .btn-secondary:hover {
-    background: var(--color-ink);
-    color: var(--color-paper);
+    border-color: var(--color-ink);
+    background: var(--color-surface);
   }
   .btn:disabled {
     opacity: 0.55;
     cursor: not-allowed;
   }
   .btn-on-dark {
-    background: var(--color-paper);
+    background: var(--color-surface);
     color: var(--color-ink);
-    border-color: var(--color-paper);
+    border-color: var(--color-surface);
   }
   .btn-on-dark:hover {
     background: var(--color-blue);
     border-color: var(--color-blue);
     color: #fff;
   }
+
+  /* Ok simgesi butona/karta hover'da hafifçe kayar */
+  .arrow-nudge svg {
+    transition: transform 200ms cubic-bezier(0.2, 0.7, 0.1, 1);
+  }
+  .arrow-nudge:hover svg {
+    transform: translateX(3px);
+  }
 }
 
-/* Tek orkestre edilmiş açılış: başlık satırları aşağıdan maskeyle açılır. */
+/* Tek orkestre edilmiş açılış: hero öğeleri sırayla yumuşakça belirir. */
 @keyframes rise {
   from {
-    transform: translateY(105%);
+    opacity: 0;
+    transform: translateY(14px);
   }
   to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
-@keyframes draw {
+@keyframes fade {
   from {
-    transform: scaleX(0);
+    opacity: 0;
   }
   to {
-    transform: scaleX(1);
+    opacity: 1;
   }
 }
-.reveal-line {
-  display: block;
-  overflow: hidden;
-}
-.reveal-line > span {
-  display: block;
+.rise {
   animation: rise 900ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
 }
-.reveal-line:nth-child(2) > span {
-  animation-delay: 120ms;
+.rise-1 {
+  animation-delay: 80ms;
 }
-.reveal-line:nth-child(3) > span {
-  animation-delay: 240ms;
+.rise-2 {
+  animation-delay: 180ms;
 }
-.draw-in {
-  transform-origin: left;
-  animation: draw 1100ms 350ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
+.rise-3 {
+  animation-delay: 280ms;
+}
+.fade-in {
+  animation: fade 1400ms 150ms ease-out both;
 }

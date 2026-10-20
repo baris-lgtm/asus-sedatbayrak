@@ -14,6 +14,7 @@ import {
 import { PARTICIPANT_LABELS, PARTICIPANT_TYPES } from "@/lib/types";
 import { track } from "@/components/analytics";
 import { Turnstile } from "@/components/turnstile";
+import { ArrowRight } from "@/components/brand";
 
 type Phase =
   | { kind: "idle" }
@@ -35,17 +36,17 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={id} className="block text-sm font-semibold">
+      <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-ink/80">
         {label}
       </label>
       {children}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1.5 text-sm text-graphite">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-graphite">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-sm font-medium text-err">
+        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-err">
           {error}
         </p>
       )}
@@ -133,13 +134,13 @@ export function ApplicationForm({
 
   if (phase.kind === "success") {
     return (
-      <div ref={successRef} tabIndex={-1} role="status" className="outline-none">
-        <div className="mb-6 h-2 w-16 bg-blue" aria-hidden />
-        <h3 className="text-3xl font-bold leading-tight">Başvurun başarıyla alındı.</h3>
-        <p className="mt-4 max-w-xl text-lg leading-relaxed">
+      <div ref={successRef} tabIndex={-1} role="status" className="rounded-[3px] border border-rule bg-surface p-8 outline-none sm:p-10">
+        <div className="mb-6 h-px w-14 bg-blue" aria-hidden />
+        <h3 className="display text-4xl">Başvurun başarıyla alındı.</h3>
+        <p className="mt-4 max-w-xl leading-relaxed text-graphite">
           Başvurun ekip tarafından incelendikten sonra sonucunu e-posta yoluyla öğreneceksin.
         </p>
-        <p className="mt-4 max-w-xl border-l-4 border-ink pl-4 font-semibold leading-relaxed">
+        <p className="mt-6 max-w-xl rounded-[3px] border border-rule bg-surface px-4 py-3 text-sm font-medium leading-relaxed">
           Bu ekran başvurunun kabul edildiği anlamına gelmez. Katılımın yalnızca onay e-postası ve QR kodlu davetiye ile
           kesinleşir.
         </p>
@@ -181,11 +182,11 @@ export function ApplicationForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate aria-describedby={`${uid}-zorunlu`}>
-      <p id={`${uid}-zorunlu`} className="mb-8 text-sm text-graphite">
+      <p id={`${uid}-zorunlu`} className="mb-6 text-xs text-graphite">
         Ek soru ve pazarlama izni dışındaki tüm alanlar zorunludur.
       </p>
 
-      <div className="grid gap-x-8 gap-y-7 sm:grid-cols-2">
+      <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
         <Field id={ids.firstName} label="Ad" error={errors.firstName?.message}>
           {input("firstName", register("firstName"), { autoComplete: "given-name", maxLength: 80 })}
         </Field>
@@ -205,19 +206,19 @@ export function ApplicationForm({
         </Field>
 
         <fieldset className="sm:col-span-2" aria-describedby={errors.participantType ? `${ids.participantType}-error` : undefined}>
-          <legend className="text-sm font-semibold">Meslek veya öğrenci durumu</legend>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <legend className="text-[13px] font-medium text-ink/80">Meslek veya öğrenci durumu</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
             {PARTICIPANT_TYPES.map((t) => (
               <label key={t} className="cursor-pointer">
                 <input type="radio" value={t} className="peer sr-only" {...register("participantType")} />
-                <span className="inline-flex min-h-11 items-center border-2 border-ink px-4 font-medium peer-checked:bg-ink peer-checked:text-paper peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
+                <span className="inline-flex min-h-11 items-center rounded-[6px] border border-rule bg-surface px-4 text-sm transition-colors hover:border-[#cbc4b8] peer-checked:border-blue peer-checked:bg-blue peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
                   {PARTICIPANT_LABELS[t]}
                 </span>
               </label>
             ))}
           </div>
           {errors.participantType && (
-            <p id={`${ids.participantType}-error`} className="mt-1.5 text-sm font-medium text-err">
+            <p id={`${ids.participantType}-error`} className="mt-1.5 text-xs font-medium text-err">
               {errors.participantType.message}
             </p>
           )}
@@ -232,20 +233,20 @@ export function ApplicationForm({
 
         {additionalQuestion && (
           <div className="sm:col-span-2">
-            <label htmlFor={ids.motivation} className="block text-sm font-semibold">
+            <label htmlFor={ids.motivation} className="mb-1.5 block text-[13px] font-medium text-ink/80">
               {additionalQuestion.label}
             </label>
             <textarea
               id={ids.motivation}
               rows={4}
               maxLength={MOTIVATION_MAX}
-              className="field-input mt-1 resize-y"
+              className="field-input resize-y"
               aria-invalid={errors.motivation ? true : undefined}
               aria-describedby={errors.motivation ? `${ids.motivation}-error` : undefined}
               {...register("motivation")}
             />
             {errors.motivation && (
-              <p id={`${ids.motivation}-error`} className="mt-1.5 text-sm font-medium text-err">
+              <p id={`${ids.motivation}-error`} className="mt-1.5 text-xs font-medium text-err">
                 {errors.motivation.message}
               </p>
             )}
@@ -261,9 +262,9 @@ export function ApplicationForm({
         </label>
       </div>
 
-      <div className="mt-10 space-y-5 border-t-2 border-ink pt-8">
+      <div className="mt-8 space-y-4 border-t border-rule pt-6 text-sm">
         {!kvkkApproved && (
-          <p className="border-2 border-dashed border-warn px-4 py-3 text-sm text-warn">
+          <p className="rounded-[3px] border border-dashed border-warn/60 bg-amber-50/60 px-4 py-3 text-xs leading-relaxed text-warn">
             Taslak: KVKK aydınlatma ve açık rıza metinleri hukuki onay sürecindedir; canlıya almadan önce onaylı metinlerle
             değiştirilmelidir.
           </p>
@@ -274,13 +275,13 @@ export function ApplicationForm({
             <input
               id={ids.kvkk}
               type="checkbox"
-              className="mt-1 h-5 w-5 shrink-0 accent-ink"
+              className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-blue"
               aria-invalid={errors.kvkkAcknowledged ? true : undefined}
               aria-describedby={errors.kvkkAcknowledged ? `${ids.kvkk}-error` : undefined}
               {...register("kvkkAcknowledged")}
             />
             <span className="leading-relaxed">
-              <Link href="/kvkk" target="_blank" className="font-semibold underline underline-offset-4">
+              <Link href="/kvkk" target="_blank" className="font-medium text-blue underline underline-offset-4">
                 KVKK aydınlatma metnini
               </Link>{" "}
               okudum; başvurumun değerlendirilmesi için kişisel verilerimin bu metin kapsamında işleneceği konusunda
@@ -288,14 +289,14 @@ export function ApplicationForm({
             </span>
           </label>
           {errors.kvkkAcknowledged && (
-            <p id={`${ids.kvkk}-error`} className="mt-1.5 pl-8 text-sm font-medium text-err">
+            <p id={`${ids.kvkk}-error`} className="mt-1.5 pl-[30px] text-xs font-medium text-err">
               {errors.kvkkAcknowledged.message}
             </p>
           )}
         </div>
 
         <label className="flex cursor-pointer items-start gap-3">
-          <input id={ids.marketing} type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-ink" {...register("marketingConsent")} />
+          <input id={ids.marketing} type="checkbox" className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-blue" {...register("marketingConsent")} />
           <span className="leading-relaxed">
             ASUS&apos;un etkinlik, ürün ve kampanyalarıyla ilgili bana e-posta ve SMS ile ticari ileti göndermesine izin
             veriyorum. <span className="text-graphite">(İsteğe bağlı — başvurunun değerlendirilmesini etkilemez.)</span>
@@ -310,19 +311,22 @@ export function ApplicationForm({
       )}
 
       {phase.kind === "error" && (
-        <div ref={errorRef} tabIndex={-1} role="alert" className="mt-8 border-l-4 border-err bg-red-50 px-4 py-3 outline-none">
-          <p className="font-semibold text-err">{phase.message}</p>
+        <div ref={errorRef} tabIndex={-1} role="alert" className="mt-6 rounded-[3px] border border-err/30 bg-red-50 px-4 py-3 outline-none">
+          <p className="text-sm font-medium text-err">{phase.message}</p>
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-center gap-4">
-        <button type="submit" className="btn btn-primary w-full sm:w-auto" disabled={isSubmitting} aria-busy={isSubmitting}>
+      <div className="mt-7 flex flex-wrap items-center gap-4">
+        <button type="submit" className="btn btn-primary arrow-nudge w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
           {isSubmitting ? "Gönderiliyor…" : phase.kind === "error" && phase.retryable ? "Tekrar gönder" : "Başvuruyu gönder"}
+          {!isSubmitting && <ArrowRight />}
         </button>
-        {isSubmitting && (
-          <span role="status" className="text-sm text-graphite">
+        {isSubmitting ? (
+          <span role="status" className="text-xs text-graphite">
             Başvurun gönderiliyor, lütfen bekle.
           </span>
+        ) : (
+          <span className="text-xs text-graphite">Başvurular değerlendirilerek katılım onayı e-posta ile iletilecek.</span>
         )}
       </div>
     </form>
