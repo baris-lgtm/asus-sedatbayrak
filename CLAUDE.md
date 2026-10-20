@@ -48,8 +48,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 
 ## Kurulum kararları (20 Ekim 2026)
 - Site adresi: `https://workshop.contracreative.com.tr` → `NEXT_PUBLIC_SITE_URL`, Supabase Auth Site URL. DNS: `workshop` CNAME → Vercel'in verdiği hedef.
-- Gönderici: `EMAIL_FROM="ASUS × Sedat Bayrak Workshop <workshop@contracreative.com.tr>"`. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
-- `EMAIL_REPLY_TO`: katılımcı yanıtlarını okuyan gerçek bir posta kutusu olmalı (workshop@ gerçek kutu değilse mevcut bir adres).
+- Gönderici (şimdilik): `EMAIL_FROM="ASUS × Sedat Bayrak Workshop <baris@contracreative.com.tr>"`, `EMAIL_REPLY_TO=baris@contracreative.com.tr` (gerçek posta kutusu; katılımcı yanıtları buraya gelir). İleride workshop@ açılırsa yalnızca bu iki ortam değişkeni değişir + redeploy; kod değişmez. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
 - Planlar: Supabase Pro + Vercel Pro hemen; Resend başvurular duyurulmadan önce Pro (ücretsizde günlük 100 e-posta sınırı).
 
 ## Durum (17 Ekim 2026)
