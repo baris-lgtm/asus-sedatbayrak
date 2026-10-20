@@ -51,6 +51,11 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Gönderici (şimdilik): `EMAIL_FROM="ASUS × Sedat Bayrak Workshop <baris@contracreative.com.tr>"`, `EMAIL_REPLY_TO=baris@contracreative.com.tr` (gerçek posta kutusu; katılımcı yanıtları buraya gelir). İleride workshop@ açılırsa yalnızca bu iki ortam değişkeni değişir + redeploy; kod değişmez. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
 - Planlar: Supabase Pro + Vercel Pro hemen; Resend başvurular duyurulmadan önce Pro (ücretsizde günlük 100 e-posta sınırı).
 
+## Canlı Supabase (20 Ekim 2026)
+- Proje: `https://jzzrrknyxrqlfprqmnen.supabase.co` (Frankfurt). 5 migration SQL Editor ile uygulandı (`supabase-kurulum.sql`), canlı doğrulama 22/22 geçti; sign-up kapalı; Site URL ayarlı.
+- Admin: `baris@contracreative.com.tr` (staff_members.role = admin).
+- **Migration geçmişi tabloya kaydedilmedi.** `supabase db push` kullanılacaksa önce: `npx supabase link --project-ref jzzrrknyxrqlfprqmnen` ve `npx supabase migration repair --status applied 20261017000001 20261017000002 20261017000003 20261017000004 20261019000005` — yoksa eski migration'ları yeniden çalıştırmaya çalışır. Yeni migration'lar ayrı dosya olarak eklenir.
+
 ## Durum (17 Ekim 2026)
 Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme ve `npm run staff:add` dahil); 93 DB + 13 birim + 56 E2E testi geçiyor (admin paneli iki bağımsız incelemeden geçti); `next build` temiz.
 **Sıradaki iş: canlıya alma** (README → "Canlıya alma"):
