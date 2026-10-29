@@ -68,5 +68,5 @@ Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme 
 4. Alan adı → `NEXT_PUBLIC_SITE_URL` güncelle + redeploy → Supabase Site URL.
 5. Canlı duman testi: başvur → onayla → telefonda QR okut → ikinci okutma engellenmeli.
 
-Görseller (29 Ekim): `public/images/*.webp` tasarım yerleşim PNG'lerinden kesildi, `public/media/hero-eskizden-mimariye.mp4` açılış videosu (son karesi = hero-poster). Portre ve ürün görselleri REFERANS (düşük çözünürlük) — onaylı orijinaller gelince aynı dosya adlarıyla değiştir.
-Bekleyen içerik: onaylı portre/ürün orijinalleri, logolar, ProArt P16 ürün linki, sosyal medya linkleri, pazarlama açık rıza + ticari ileti onayı metinleri (hukuktan), çerez politikası. Canlıya 0006 migration'ı SQL Editor ile uygulanmalı.
+Görseller (29 Ekim): `public/images/*.webp` tasarım yerleşim PNG'lerinden kesildi, `public/media/hero-eskizden-mimariye.mp4` açılış videosu (son karesi = hero-poster). Konuşmacı portreleri sedat/omer/fatih `-v2` = gerçek fotoğraflar (29 Ekim); Mesut hâlâ taslak referansı. Ürün: ASUS resmî dekupe görselleri (`proart-p16-black`, `proart-p16-white-rear`). Logo: `public/brand/asus-white.png` (resmî). Görsel değiştirirken dosya adına yeni sürüm ekle (CDN önbelleği).
+Bekleyen içerik: Mesut Çevik portresi, ProArt Design Futures logosu, ProArt P16 ürün linki, sosyal medya linkleri, pazarlama açık rıza + ticari ileti onayı metinleri (hukuktan), çerez politikası. Canlıya 0006 migration'ı SQL Editor ile uygulanmalı.

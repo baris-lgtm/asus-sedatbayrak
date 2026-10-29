@@ -14,6 +14,7 @@ export function ImageSlot({
   priority = false,
   rounded = true,
   labelRight = false,
+  fit = "cover",
 }: {
   slot: Slot;
   className?: string;
@@ -23,12 +24,14 @@ export function ImageSlot({
   rounded?: boolean;
   /** Maskeyle soldan eritilen görsellerde etiket sağ altta durur. */
   labelRight?: boolean;
+  /** "contain": dekupe (şeffaf zeminli) ürün görselleri için. */
+  fit?: "cover" | "contain";
 }) {
   const radius = rounded ? "rounded-[3px]" : "";
   if (slot.src) {
     return (
       <div className={`relative overflow-hidden ${radius} ${className}`}>
-        <Image src={slot.src} alt={slot.alt} fill sizes={sizes} priority={priority} className="object-cover" />
+        <Image src={slot.src} alt={slot.alt} fill sizes={sizes} priority={priority} className={fit === "contain" ? "object-contain" : "object-cover"} />
       </div>
     );
   }

@@ -26,15 +26,15 @@ export interface Speaker {
 }
 
 const photo = (name: string, file: string): ImageSlot => ({
-  src: `/images/konusmaci-${file}.webp`,
+  src: `/images/konusmaci-${file}.webp`,  // file: "sedat-v2" vb.
   alt: `${name} portresi`,
   placeholderLabel: `${name} · kare portre, min. 800×800`,
 });
 
 export const speakers = {
-  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat") },
-  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer") },
-  fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih") },
+  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat-v2") },
+  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer-v2") },
+  fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih-v2") },
   mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut") },
 } satisfies Record<string, Speaker>;
 
@@ -59,7 +59,7 @@ export const eventContent = {
 
   /** Logo dosyaları (SVG önerilir) public/brand/ altına konup yolu yazılır. null → yazı ile gösterilir. */
   logos: {
-    brand: null as string | null,
+    brand: "/brand/asus-white.png" as string | null,
     program: null as string | null,
     artist: null as string | null,
     partner: null as string | null,
@@ -113,7 +113,7 @@ export const eventContent = {
         text: "ASUS ProArt ekosistemiyle yaratıcı süreçlerde daha özgür, daha akıcı ve daha verimli bir üretim deneyimi.",
         speakers: ["mesut"],
         tone: "light",
-        image: { src: "/images/oturum-2-proart-v2.webp", alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
+        image: { src: "/images/proart-p16-white-rear.webp", alt: "ASUS ProArt P16 dizüstü bilgisayar, arkadan görünüm", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
       },
       {
         title: "Tasarım ve mimarlık pratiği",
@@ -144,8 +144,8 @@ export const eventContent = {
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
     video: null as string | null,
     image: {
-      src: "/images/proart-p16-v2.webp",
-      alt: "Beton zemin üzerinde ASUS ProArt P16 dizüstü bilgisayar",
+      src: "/images/proart-p16-black.webp",
+      alt: "ASUS ProArt P16 (H7607) Nano Black dizüstü bilgisayar",
       placeholderLabel: "Ürün görseli · yatay, min. 2000×1200",
     } satisfies ImageSlot,
   },

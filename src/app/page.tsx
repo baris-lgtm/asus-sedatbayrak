@@ -184,10 +184,18 @@ export default async function HomePage() {
                   className={`relative overflow-hidden ${light ? "bg-cream text-ink" : "border-t border-white/10 bg-night-2"}`}
                 >
                   <div
-                    className={`absolute inset-y-0 hidden w-[34%] lg:block ${light ? "left-0" : "right-0"}`}
-                    style={fade(light ? "right" : "left", "50%")}
+                    className={`absolute inset-y-0 hidden w-[34%] lg:block ${light ? "left-0 py-8 pl-[3vw] pr-6" : "right-0"}`}
+                    style={light ? undefined : fade("left", "50%")}
                   >
-                    <ImageSlot slot={item.image} dark={!light} rounded={false} labelRight={!light} sizes="34vw" className="h-full w-full" />
+                    <ImageSlot
+                      slot={item.image}
+                      dark={!light}
+                      rounded={false}
+                      labelRight={!light}
+                      fit={light ? "contain" : "cover"}
+                      sizes="34vw"
+                      className="h-full w-full"
+                    />
                   </div>
                   <div
                     className={`relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 lg:grid-cols-12 lg:items-center lg:py-16 ${
@@ -250,8 +258,8 @@ export default async function HomePage() {
 
         {/* ÜRÜN */}
         <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink lg:flex lg:min-h-[38vw] lg:items-center">
-          <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block" style={fade("left", "40%")}>
-            <ImageSlot slot={product.image} rounded={false} labelRight sizes="58vw" className="h-full w-full" />
+          <div className="absolute inset-y-0 right-0 hidden w-[56%] px-[4vw] py-[4vw] lg:block">
+            <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="50vw" className="h-full w-full" />
           </div>
           <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
             <div className="max-w-md">
@@ -278,7 +286,7 @@ export default async function HomePage() {
               />
             )}
           </div>
-          <ImageSlot slot={product.image} rounded={false} sizes="100vw" className="aspect-[16/10] w-full lg:hidden" />
+          <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="100vw" className="mx-auto aspect-[16/11] w-[88%] lg:hidden" />
         </section>
 
         {/* BAŞVURU */}
