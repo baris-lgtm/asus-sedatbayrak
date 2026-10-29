@@ -68,4 +68,5 @@ Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme 
 4. Alan adı → `NEXT_PUBLIC_SITE_URL` güncelle + redeploy → Supabase Site URL.
 5. Canlı duman testi: başvur → onayla → telefonda QR okut → ikinci okutma engellenmeli.
 
-Bekleyen içerik: görseller/video/logolar, ProArt P16 ürün linki, sosyal medya linkleri, pazarlama açık rıza + ticari ileti onayı metinleri (hukuktan), çerez politikası. Canlıya 0006 migration'ı SQL Editor ile uygulanmalı.
+Görseller (29 Ekim): `public/images/*.webp` tasarım yerleşim PNG'lerinden kesildi, `public/media/hero-eskizden-mimariye.mp4` açılış videosu (son karesi = hero-poster). Portre ve ürün görselleri REFERANS (düşük çözünürlük) — onaylı orijinaller gelince aynı dosya adlarıyla değiştir.
+Bekleyen içerik: onaylı portre/ürün orijinalleri, logolar, ProArt P16 ürün linki, sosyal medya linkleri, pazarlama açık rıza + ticari ileti onayı metinleri (hukuktan), çerez politikası. Canlıya 0006 migration'ı SQL Editor ile uygulanmalı.

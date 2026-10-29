@@ -5,7 +5,7 @@ import { ImageSlot } from "@/components/image-slot";
 import { ApplicationForm } from "@/components/application-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { HeroVideo } from "@/components/hero-video";
+import { BackgroundVideo, HeroVideo } from "@/components/hero-video";
 import { ArrowRight, ProgramMark } from "@/components/brand";
 
 // Etkinlik ayarları admin panelinden değişir; sayfa en geç 60 sn'de güncellenir
@@ -104,21 +104,19 @@ export default async function HomePage() {
 
       <main id="icerik">
         {/* HERO */}
-        <section aria-labelledby="hero-baslik" className="relative overflow-hidden">
-          <div className="absolute inset-y-0 right-0 hidden w-[60%] lg:block">
-            <HeroVideo src={hero.video} poster={hero.poster} caption={hero.videoCaption} className="h-full w-full" />
-            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-night to-transparent" />
-          </div>
-          <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-12 sm:px-8 lg:min-h-[600px] lg:pb-24 lg:pt-16">
-            <div className="max-w-md">
+        <section aria-labelledby="hero-baslik" className="relative overflow-hidden lg:min-h-[640px]">
+          <div className="pointer-events-none relative z-10 mx-auto max-w-7xl px-4 pb-12 pt-12 sm:px-8 lg:pb-28 lg:pt-16">
+            <div className="pointer-events-auto max-w-md">
               <ProgramMark className="rise text-[15px]" />
-              <h1 id="hero-baslik" className="headline rise rise-1 mt-9 text-[clamp(3.2rem,7vw,5.4rem)] leading-[0.98]">
+              <div aria-hidden className="mt-7 h-px w-full max-w-[22rem] bg-white/20" />
+              <h1 id="hero-baslik" className="headline rise rise-1 mt-8 text-[clamp(3.2rem,7vw,5.4rem)] leading-[0.98]">
                 <span className="block">{hero.title[0]}</span>
                 <span className="block text-copper">{hero.title[1]}</span>
               </h1>
-              <p className="rise rise-2 mt-7 max-w-sm text-[15px] leading-relaxed text-white/75">{eventContent.tagline}</p>
+              <p className="rise rise-2 mt-7 max-w-sm text-[15px] leading-relaxed text-white/80">{eventContent.tagline}</p>
+              <div aria-hidden className="mt-9 h-px w-full max-w-[22rem] bg-white/20" />
 
-              <div className="rise rise-3 mt-10">
+              <div className="rise rise-3 mt-7">
                 <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
                 <p className="mt-1.5 text-[13px] text-fog">
                   {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
@@ -126,19 +124,27 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <a href="#basvuru" className="btn-ghost-light arrow-nudge rise rise-3 mt-9">
+              <a href="#basvuru" className="btn-ghost-light arrow-nudge rise rise-3 mt-8">
                 Katılım için başvur
                 <ArrowRight />
               </a>
             </div>
           </div>
-          <HeroVideo
-            src={hero.video}
-            poster={hero.poster}
-            caption={hero.videoCaption}
-            sizes="100vw"
-            className="aspect-video w-full lg:hidden"
-          />
+          {/* Tek video: mobilde metnin altında 16:9, masaüstünde tüm bölümün arka planı */}
+          <div className="relative aspect-video w-full lg:absolute lg:inset-0 lg:aspect-auto">
+            <BackgroundVideo
+              src={hero.video}
+              poster={hero.poster}
+              caption={hero.videoCaption}
+              sizes="100vw"
+              className="h-full w-full"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,#0d0c0b_0%,rgba(13,12,11,0.92)_28%,rgba(13,12,11,0.35)_52%,transparent_70%)] lg:block"
+            />
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-night/70 to-transparent" />
+          </div>
         </section>
 
         {/* ETKİNLİK HAKKINDA */}

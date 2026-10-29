@@ -25,17 +25,17 @@ export interface Speaker {
   photo: ImageSlot;
 }
 
-const photo = (name: string): ImageSlot => ({
-  src: null,
+const photo = (name: string, file: string): ImageSlot => ({
+  src: `/images/konusmaci-${file}.webp`,
   alt: `${name} portresi`,
   placeholderLabel: `${name} · kare portre, min. 800×800`,
 });
 
 export const speakers = {
-  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak") },
-  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz") },
-  fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir") },
-  mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik") },
+  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat") },
+  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer") },
+  fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih") },
+  mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut") },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof speakers;
@@ -76,10 +76,10 @@ export const eventContent = {
   hero: {
     title: ["Mimarlığın", "Evrimi"],
     /** public/ altındaki MP4 (H.264). null → yalnızca poster görseli gösterilir, oynatma düğmesi çıkmaz. */
-    video: null as string | null,
+    video: "/media/hero-eskizden-mimariye.mp4" as string | null,
     videoCaption: "Mimari vizyonun fikirden gerçeğe dönüşümü",
     poster: {
-      src: null,
+      src: "/images/hero-poster.webp",
       alt: "Çizgi eskizlerden gerçeğe dönüşen beton mimari yapı",
       placeholderLabel: "Hero video posteri · 16:9, min. 1920×1080",
     } satisfies ImageSlot,
@@ -90,7 +90,7 @@ export const eventContent = {
     title: "Mimarlığın bugününü ve geleceğini birlikte konuşalım.",
     text: "Mimarlık, yapay zekâ ve 3D modelleme ekseninde gerçek profesyonel deneyimlere dayanan, ilham verici bir paylaşım ve bilgi buluşması. Tasarımın geleceğini şekillendiren araçlar, yöntemler ve yaklaşımlar üzerine uzman isimleri bir araya getiriyoruz.",
     image: {
-      src: null,
+      src: "/images/etkinlik-hakkinda.webp",
       alt: "Eskiz çizgileriyle çevrili beton mimari yapı",
       placeholderLabel: "Etkinlik görseli · yatay, açık zemin",
     } satisfies ImageSlot,
@@ -106,21 +106,21 @@ export const eventContent = {
         text: "Yapay zekâ araçları, modelleme teknikleri, agent'lar ve üretim ekosistemleri üzerine gerçek deneyimler ve güncel yaklaşımlar.",
         speakers: ["sedat", "fatih"],
         tone: "dark",
-        image: { src: null, alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
+        image: { src: "/images/oturum-1.webp", alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
       },
       {
         title: "Yaratıcı üretim için ProArt",
         text: "ASUS ProArt ekosistemiyle yaratıcı süreçlerde daha özgür, daha akıcı ve daha verimli bir üretim deneyimi.",
         speakers: ["mesut"],
         tone: "light",
-        image: { src: null, alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
+        image: { src: "/images/oturum-2-proart.webp", alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
       },
       {
         title: "Tasarım ve mimarlık pratiği",
         text: "Strüktürel tasarım, büyük ölçekli projeler ve güncel mimarlık pratiği üzerine saha deneyimleri ve mesleki bakış açıları.",
         speakers: ["sedat", "omer"],
         tone: "dark",
-        image: { src: null, alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
+        image: { src: "/images/oturum-3.webp", alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
       },
     ] satisfies { title: string; text: string; speakers: SpeakerId[]; tone: "dark" | "light"; image: ImageSlot }[],
   },
@@ -137,14 +137,14 @@ export const eventContent = {
     name: "ProArt P16",
     model: "(H7607)",
     tagline: "Yaratıcı üretim ve 3D iş akışları için tasarlanan profesyonel bir deneyim.",
-    text: "ProArt P16, mimarlık, 3D modelleme ve yaratıcı üretim süreçlerinde ihtiyaç duyulan esneklik ve güvenilirliği sunar. Fikirlerinizi gerçeğe dönüştürürken, hayal gücünüzün temposuna ayak uydurur.",
+    text: "ProArt P16, mimarlık, 3D modelleme ve yaratıcı üretim süreçlerinde ihtiyaç duyulan esneklik ve güvenilirliği sunar. Fikirlerinizi gerçeğe dönüştürürken, hayal gücünüzün temposuna uyum sağlar.",
     /** Resmî ürün sayfası. null → "ProArt P16'yı keşfet" düğmesi gösterilmez. */
     url: null as string | null,
     ctaLabel: "ProArt P16'yı keşfet",
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
     video: null as string | null,
     image: {
-      src: null,
+      src: "/images/proart-p16.webp",
       alt: "Beton zemin üzerinde ASUS ProArt P16 dizüstü bilgisayar",
       placeholderLabel: "Ürün görseli · yatay, min. 2000×1200",
     } satisfies ImageSlot,
@@ -155,7 +155,7 @@ export const eventContent = {
     title: ["Katılım için", "başvurun."],
     text: "Mimarlık, 3D modelleme ve yapay zekâ etrafında şekillenen bu özel buluşmada yer almak için aşağıdaki formu doldurun.",
     image: {
-      src: null,
+      src: "/images/basvuru-eskiz.webp",
       alt: "Eskiz çizgileriyle çizilmiş mimari yapı",
       placeholderLabel: "Başvuru köşe görseli",
     } satisfies ImageSlot,
@@ -170,7 +170,7 @@ export const eventContent = {
       portfolio: "Portfolyo bağlantısı (isteğe bağlı)",
       motivation: "Katılım motivasyonunuz",
       motivationPlaceholder: "Bu etkinliğe katılma motivasyonunuzu bizimle paylaşın…",
-      note: "Başvurular ilgili alan ve katılım motivasyonuna göre değerlendirilir. Katılım onayı e-posta ile iletilir.",
+      note: "Başvurular ilgi alanı ve katılım motivasyonuna göre değerlendirilir. Katılım onayı e-posta ile iletilir.",
     },
   },
 

@@ -16,7 +16,12 @@ test.describe("Landing page ve başvuru formu", () => {
     await expect(page.locator("#konusmacilar li")).toHaveCount(4);
     // Ürün bağlantısı tanımlanmadıkça düğme gösterilmez
     await expect(page.getByRole("link", { name: /ProArt P16'yı keşfet/ })).toHaveCount(0);
-    await expect(page.getByRole("img", { name: /görsel henüz eklenmedi/ }).first()).toBeVisible();
+    // Görseller yerinde; açılış videosu sessiz, döngüsüz ve duraklatılabilir
+    await expect(page.locator("#konusmacilar img")).toHaveCount(4);
+    const video = page.locator("section[aria-labelledby=hero-baslik] video");
+    await expect(video).toHaveAttribute("src", "/media/hero-eskizden-mimariye.mp4");
+    expect(await video.evaluate((v: HTMLVideoElement) => v.muted && !v.loop)).toBe(true);
+    await expect(page.getByRole("button", { name: /Videoyu (oynat|duraklat|tekrar oynat)/ })).toBeVisible();
     // SSS — 6 soru
     await expect(page.locator("#sss details")).toHaveCount(6);
     // Meta: description + OG
