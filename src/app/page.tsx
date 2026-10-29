@@ -249,11 +249,11 @@ export default async function HomePage() {
         </section>
 
         {/* ÜRÜN */}
-        <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink">
+        <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink lg:flex lg:min-h-[38vw] lg:items-center">
           <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block" style={fade("left", "40%")}>
             <ImageSlot slot={product.image} rounded={false} labelRight sizes="58vw" className="h-full w-full" />
           </div>
-          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
+          <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
             <div className="max-w-md">
               <Eyebrow light>{product.eyebrow}</Eyebrow>
               <h2 id="urun-baslik" className="headline mt-6 text-[clamp(2.3rem,4.2vw,3.3rem)]">

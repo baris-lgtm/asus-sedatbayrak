@@ -90,7 +90,7 @@ export const eventContent = {
     title: "Mimarlığın bugününü ve geleceğini birlikte konuşalım.",
     text: "Mimarlık, yapay zekâ ve 3D modelleme ekseninde gerçek profesyonel deneyimlere dayanan, ilham verici bir paylaşım ve bilgi buluşması. Tasarımın geleceğini şekillendiren araçlar, yöntemler ve yaklaşımlar üzerine uzman isimleri bir araya getiriyoruz.",
     image: {
-      src: "/images/etkinlik-hakkinda.webp",
+      src: "/images/etkinlik-hakkinda-v2.webp",
       alt: "Eskiz çizgileriyle çevrili beton mimari yapı",
       placeholderLabel: "Etkinlik görseli · yatay, açık zemin",
     } satisfies ImageSlot,
@@ -106,21 +106,21 @@ export const eventContent = {
         text: "Yapay zekâ araçları, modelleme teknikleri, agent'lar ve üretim ekosistemleri üzerine gerçek deneyimler ve güncel yaklaşımlar.",
         speakers: ["sedat", "fatih"],
         tone: "dark",
-        image: { src: "/images/oturum-1.webp", alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
+        image: { src: "/images/oturum-1-v2.webp", alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
       },
       {
         title: "Yaratıcı üretim için ProArt",
         text: "ASUS ProArt ekosistemiyle yaratıcı süreçlerde daha özgür, daha akıcı ve daha verimli bir üretim deneyimi.",
         speakers: ["mesut"],
         tone: "light",
-        image: { src: "/images/oturum-2-proart.webp", alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
+        image: { src: "/images/oturum-2-proart-v2.webp", alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
       },
       {
         title: "Tasarım ve mimarlık pratiği",
         text: "Strüktürel tasarım, büyük ölçekli projeler ve güncel mimarlık pratiği üzerine saha deneyimleri ve mesleki bakış açıları.",
         speakers: ["sedat", "omer"],
         tone: "dark",
-        image: { src: "/images/oturum-3.webp", alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
+        image: { src: "/images/oturum-3-v2.webp", alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
       },
     ] satisfies { title: string; text: string; speakers: SpeakerId[]; tone: "dark" | "light"; image: ImageSlot }[],
   },
@@ -144,7 +144,7 @@ export const eventContent = {
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
     video: null as string | null,
     image: {
-      src: "/images/proart-p16.webp",
+      src: "/images/proart-p16-v2.webp",
       alt: "Beton zemin üzerinde ASUS ProArt P16 dizüstü bilgisayar",
       placeholderLabel: "Ürün görseli · yatay, min. 2000×1200",
     } satisfies ImageSlot,
@@ -155,7 +155,7 @@ export const eventContent = {
     title: ["Katılım için", "başvurun."],
     text: "Mimarlık, 3D modelleme ve yapay zekâ etrafında şekillenen bu özel buluşmada yer almak için aşağıdaki formu doldurun.",
     image: {
-      src: "/images/basvuru-eskiz.webp",
+      src: "/images/basvuru-eskiz-v2.webp",
       alt: "Eskiz çizgileriyle çizilmiş mimari yapı",
       placeholderLabel: "Başvuru köşe görseli",
     } satisfies ImageSlot,
