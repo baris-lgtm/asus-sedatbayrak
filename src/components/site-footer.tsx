@@ -44,10 +44,10 @@ export function SiteFooter() {
           <p>© {year} {eventContent.brand}. Tüm hakları saklıdır.</p>
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             <li>
-              <Link href="/kvkk" className="hover:text-white">KVKK aydınlatma metni</Link>
+              <Link href="/kvkk" className="hover:text-white">KVKK Aydınlatma Metni</Link>
             </li>
             <li>
-              <Link href="/gizlilik" className="hover:text-white">Gizlilik ve çerezler</Link>
+              <Link href="/gizlilik" className="hover:text-white">Gizlilik Politikası</Link>
             </li>
             {eventContent.contact.email && (
               <li>

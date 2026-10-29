@@ -83,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     const additional: Record<string, string> = { motivation: input.motivation };
     if (input.tools) additional.tools = input.tools;
+    if (input.portfolio) additional.portfolio = input.portfolio;
 
     const db = createAdminClient();
     const { data, error } = await db

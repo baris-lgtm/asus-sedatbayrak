@@ -167,6 +167,7 @@ export const eventContent = {
       institution: "Kurum / Okul",
       tools: "Kullandığınız tasarım araçları",
       toolsPlaceholder: "Ör. AutoCAD, Revit, 3ds Max, Blender…",
+      portfolio: "Portfolyo bağlantısı (isteğe bağlı)",
       motivation: "Katılım motivasyonunuz",
       motivationPlaceholder: "Bu etkinliğe katılma motivasyonunuzu bizimle paylaşın…",
       note: "Başvurular ilgili alan ve katılım motivasyonuna göre değerlendirilir. Katılım onayı e-posta ile iletilir.",
@@ -176,6 +177,7 @@ export const eventContent = {
   /** Admin detayında ve CSV'de gösterilen ek form yanıtları (applications.additional_answers). */
   answerFields: [
     { id: "tools", label: "Kullandığı tasarım araçları" },
+    { id: "portfolio", label: "Portfolyo bağlantısı" },
     { id: "motivation", label: "Katılım motivasyonu" },
   ],
 
@@ -186,8 +188,8 @@ export const eventContent = {
 
   legal: {
     /** Hukuk onaylı KVKK aydınlatma metni gelene kadar sayfada TASLAK uyarısı gösterilir. */
-    kvkkNoticeApproved: false,
+    kvkkNoticeApproved: true,
     marketingConsentApproved: false,
-    dataControllerName: null as string | null,
+    dataControllerName: "ASUSTEK COMPUTER INC." as string | null,
   },
 } as const;

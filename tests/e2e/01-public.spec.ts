@@ -51,6 +51,7 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Öğrenci" });
     await page.getByLabel("Kurum / Okul").fill("İTÜ");
     await page.getByLabel("Kullandığınız tasarım araçları").fill("Revit, Blender");
+    await page.getByLabel(/Portfolyo bağlantısı/).fill("https://ornek.com/elif");
     await page.getByLabel("Katılım motivasyonunuz").fill("Dijital üretim araçlarını öğrenmek istiyorum.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
@@ -66,6 +67,7 @@ test.describe("Landing page ve başvuru formu", () => {
     expect(data.kvkk_notice_version).toBe("TASLAK-v0");
     expect(data.additional_answers.motivation).toContain("Dijital");
     expect(data.additional_answers.tools).toBe("Revit, Blender");
+    expect(data.additional_answers.portfolio).toBe("https://ornek.com/elif");
     expect(data).toMatchObject({ first_name: "Elif Su", last_name: "Yılmaz", participant_type: "student", institution: "İTÜ", department: null });
 
     const { data: logs } = await service().from("email_logs").select("email_type, status, provider_message_id").eq("application_id", data.id);
@@ -177,6 +179,18 @@ test.describe("Landing page ve başvuru formu", () => {
     }
     const rpc = await a.rpc("admin_approve", { p_application_id: crypto.randomUUID(), p_invitation_id: crypto.randomUUID(), p_qr_token_hash: "0".repeat(64), p_manual_code_hash: "0".repeat(64) });
     expect(rpc.error).not.toBeNull();
+  });
+
+  test("hukuki metinler yayında; taslak uyarısı yok", async ({ page }) => {
+    await page.goto("/kvkk");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Kişisel Verilerin İşlenmesine İlişkin Aydınlatma Metni");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(8);
+    await expect(page.getByRole("link", { name: "LegalCompliance@asus.com" }).first()).toHaveAttribute("href", "mailto:LegalCompliance@asus.com");
+    await page.goto("/gizlilik");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Gizlilik Politikası");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveCount(12);
+    await page.goto("/#basvuru");
+    await expect(page.getByText(/Taslak: KVKK/)).toHaveCount(0);
   });
 
   test("SEO: robots, sitemap; davetiye ve admin indekslenmez", async ({ request }) => {

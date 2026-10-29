@@ -31,7 +31,9 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 
 ## Önemli dosyalar
 - `src/config/event.ts` — statik içerik (program, konuşmacılar, ürün, görseller, iletişim, KVKK onay bayrakları).
-- Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
+- Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` ve `.portfolio` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
+- Hukuki metinler: `src/content/legal.ts` (ASUS'tan gelen KVKK Aydınlatma Metni + Gizlilik Politikası, 29 Ekim 2026). Metne dokunmadan önce hukuk onayı; değişince admin'den KVKK sürümünü artır.
+- Saklama: `purge_expired_applications()` etkinlik tarihinden (`starts_at`, `date_confirmed`) itibaren `retention_days` (365) sonra tüm başvuruları siler (migration 0006).
 - `event_settings` tablosu — tarih/mekân/kapasite (admin panelinden `/admin/ayarlar`). `*_confirmed` false ise bilgi gösterilmez.
 - `src/lib/email/` — şablonlar, gönderim, bildirimler.
 - `src/app/admin/actions.ts` — tüm admin işlemleri.
@@ -66,4 +68,4 @@ Tüm özellikler tamam (toplu tarih/mekân bilgilendirmesi, KVKK kalıcı silme 
 4. Alan adı → `NEXT_PUBLIC_SITE_URL` güncelle + redeploy → Supabase Site URL.
 5. Canlı duman testi: başvur → onayla → telefonda QR okut → ikinci okutma engellenmeli.
 
-Bekleyen içerik: kesin tarih/mekân/kapasite, Sedat Bayrak biyografi + görseller + bağlantılar, ASUS ürün modelleri, iletişim e-postası, hukuk onaylı KVKK/pazarlama metinleri.
+Bekleyen içerik: görseller/video/logolar, ProArt P16 ürün linki, sosyal medya linkleri, pazarlama açık rıza + ticari ileti onayı metinleri (hukuktan), çerez politikası. Canlıya 0006 migration'ı SQL Editor ile uygulanmalı.

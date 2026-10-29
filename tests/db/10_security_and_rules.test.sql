@@ -281,9 +281,20 @@ select tests.expect_error($$select tests.apply('kapali@example.com')$$, 'ERR_APP
 update public.event_settings set applications_open = true;
 
 \echo '--- 15. Veri saklama'
+-- Süre etkinlik tarihinden sayılır; eski başvuru tarihi tek başına silme sebebi değildir.
 update public.applications set created_at = now() - interval '400 days' where email = 'hile@example.com';
--- created_at tetikleyicide sadece INSERT'te zorlanır; UPDATE testi için doğrudan yazıldı.
-select tests.ok((select public.purge_expired_applications() = 1), 'saklama süresi geçen başvuru silindi');
+update public.event_settings set retention_days = 365, starts_at = null, date_confirmed = false;
+select tests.ok((select public.purge_expired_applications() = 0), 'etkinlik tarihi yokken hiçbir başvuru silinmez');
+update public.event_settings set starts_at = now() - interval '100 days', date_confirmed = true;
+select tests.ok((select public.purge_expired_applications() = 0), 'etkinlikten 1 yıl geçmeden silinmez');
+update public.event_settings set starts_at = now() - interval '400 days', date_confirmed = false;
+select tests.ok((select public.purge_expired_applications() = 0), 'kesinleşmemiş tarihle silinmez');
+begin;
+update public.event_settings set date_confirmed = true;
+select tests.ok((select public.purge_expired_applications() > 0), 'etkinlikten 1 yıl sonra silme çalışır');
+select tests.ok(not exists (select 1 from public.applications), 'etkinlikten 1 yıl sonra tüm başvurular silinmiş');
+rollback;
+update public.event_settings set starts_at = null, date_confirmed = false;
 reset role;
 
 \echo '--- 16. KVKK kalıcı silme ve bilgi güncellemesi e-posta türü'

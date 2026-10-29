@@ -82,7 +82,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           <Text name="kvkk_notice_version" label="KVKK aydınlatma metni sürümü" defaultValue={initial.kvkk_notice_version} maxLength={40} hint="Metin değiştiğinde sürümü artır; yeni başvurularda bu sürüm kaydedilir." />
           <Text name="marketing_consent_version" label="Pazarlama izni metni sürümü" defaultValue={initial.marketing_consent_version} maxLength={40} />
         </div>
-        <Text name="retention_days" label="Saklama süresi (gün)" type="number" min={1} max={3650} defaultValue={initial.retention_days} hint="Bu süreden eski başvurular otomatik silme görevinde kalıcı olarak silinir. Hukuk onaylı süreyi gir." />
+        <Text name="retention_days" label="Saklama süresi (gün)" type="number" min={1} max={3650} defaultValue={initial.retention_days} hint="Etkinlik tarihinden itibaren sayılır (aydınlatma metni: 1 yıl = 365 gün). Süre dolunca tüm başvurular gece çalışan görevle kalıcı olarak silinir; tarih kesinleşmemişse hiçbir şey silinmez." />
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-4">

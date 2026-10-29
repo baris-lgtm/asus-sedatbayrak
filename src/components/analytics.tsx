@@ -81,7 +81,7 @@ export function ConsentAndAnalytics({ gaId, gtmId }: { gaId?: string; gtmId?: st
           <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-2xl text-sm leading-relaxed">
               Siteyi geliştirmek için anonim kullanım istatistikleri toplamak istiyoruz. Bu çerezler yalnızca izin
-              verirsen etkinleşir. <Link href="/gizlilik" className="underline underline-offset-2">Gizlilik ve çerezler</Link>
+              verirseniz etkinleşir. <Link href="/gizlilik" className="underline underline-offset-2">Gizlilik Politikası</Link>
             </p>
             <div className="flex gap-3">
               <button type="button" className="btn btn-secondary" onClick={() => choose("denied")}>
