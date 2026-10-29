@@ -29,7 +29,11 @@ export function ProgramMark({ className = "" }: { className?: string }) {
   if (src) return <img src={src} alt={`${eventContent.program.name} ${eventContent.program.sub}`} className={`h-[1.4em] w-auto ${className}`} />;
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>
-      <span className="font-headline text-[1.45em] font-medium tracking-[-0.01em] text-copper">{eventContent.program.name}</span>
+      {eventContent.logos.proart ? (
+        <img src={eventContent.logos.proart} alt={eventContent.program.name} className="h-[1.25em] w-auto" />
+      ) : (
+        <span className="font-headline text-[1.45em] font-medium tracking-[-0.01em] text-copper">{eventContent.program.name}</span>
+      )}
       <span aria-hidden className="h-[1.2em] w-px bg-white/45" />
       <span lang="en" className="text-[0.82em] font-medium uppercase tracking-[0.08em] text-white/90">{eventContent.program.sub}</span>
     </span>

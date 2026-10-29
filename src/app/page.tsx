@@ -29,7 +29,7 @@ function SpeakerCard({ s, size = "sm", light = false }: { s: Speaker; size?: "sm
         slot={s.photo}
         dark={!light}
         sizes={size === "sm" ? "136px" : "(min-width: 1024px) 22vw, 45vw"}
-        className={`${size === "sm" ? "aspect-square" : "aspect-[5/4]"} w-full grayscale`}
+        className={`${size === "sm" ? "aspect-square" : "aspect-[5/4]"} w-full grayscale contrast-[1.06] brightness-[0.9] transition-[filter] duration-500 hover:brightness-100`}
       />
       <figcaption className="mt-3">
         <span className={`block font-medium ${size === "sm" ? "text-[13px]" : "text-base"}`}>{s.name}</span>
@@ -107,7 +107,7 @@ export default async function HomePage() {
         <section aria-labelledby="hero-baslik" className="relative overflow-hidden lg:min-h-[640px]">
           <div className="pointer-events-none relative z-10 mx-auto max-w-7xl px-4 pb-12 pt-12 sm:px-8 lg:pb-28 lg:pt-16">
             <div className="pointer-events-auto max-w-md">
-              <ProgramMark className="rise text-[15px]" />
+              <ProgramMark className="rise text-[17px]" />
               <div aria-hidden className="mt-7 h-px w-full max-w-[22rem] bg-white/20" />
               <h1 id="hero-baslik" className="headline rise rise-1 mt-8 text-[clamp(3.2rem,7vw,5.4rem)] leading-[0.98]">
                 <span className="block">{hero.title[0]}</span>

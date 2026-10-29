@@ -33,9 +33,9 @@ const photo = (name: string, file: string): ImageSlot => ({
 
 export const speakers = {
   sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat-v2") },
-  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer-v2") },
+  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer") },
   fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih-v2") },
-  mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut") },
+  mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut-v2") },
 } satisfies Record<string, Speaker>;
 
 export type SpeakerId = keyof typeof speakers;
@@ -61,6 +61,8 @@ export const eventContent = {
   logos: {
     brand: "/brand/asus-white.png" as string | null,
     program: null as string | null,
+    /** Resmî ProArt yazı logosu (ProArt P16 logosundan, bakır). "ProArt | DESIGN FUTURES" kilidinde kullanılır. */
+    proart: "/brand/proart-wordmark-copper.png" as string | null,
     artist: null as string | null,
     partner: null as string | null,
   },
