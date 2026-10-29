@@ -101,8 +101,8 @@ KVKK silme talebi gelirse: başvuru detayında **Başvuruyu kalıcı olarak sil*
 ## İçeriği güncelleme
 
 - **Metinler, görseller, biyografi, sosyal bağlantılar, ürünler, iletişim**: `src/config/event.ts`. Görselleri `public/` altına koyup `src` alanına yolunu yazın; placeholder otomatik kalkar.
-  Açılış sayfasındaki görsel alanları: `hero.image` (min. 2400×1600, sol kenarı zemine erir), `approach.image` (4:3), `pillars[].image` (3 kart, 2:1), `application.image` (dikey), `artistBio.portrait` (4:5) ve `works`, ürün görselleri.
-  Logolar: `logos.brand` / `logos.artist` / `logos.partner` → `public/brand/*.svg` (tanımlanmazsa düz yazı görünür).
+  Açılış sayfası (ProArt Design Futures): `hero.video` (MP4) + `hero.poster` (16:9), `about.image`, `sessions.items[].image`, `speakers.*.photo` (kare portre, sayfada siyah-beyaz gösterilir), `product.image` / `product.video` / `product.url` ("ProArt P16'yı keşfet" düğmesi yalnızca url varsa görünür), `application.image`, `socials[].url`.
+  Logolar: `logos.brand` / `logos.program` / `logos.partner` → `public/brand/*.svg` (tanımlanmazsa düz yazı görünür).
 - **Tarih, mekân, kapasite, başvuru açık/kapalı**: `/admin/ayarlar` (deploy gerektirmez). "Kesinleşti" işaretlenmedikçe sayfada ve e-postalarda gösterilmez.
 - **KVKK metinleri**: `src/app/kvkk/page.tsx`, `src/app/gizlilik/page.tsx`; onaylı metni ekleyince `eventContent.legal.kvkkNoticeApproved = true` yapın ve `/admin/ayarlar`'dan sürümü artırın.
 

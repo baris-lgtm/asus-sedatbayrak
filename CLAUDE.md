@@ -30,7 +30,8 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Şema değişikliği = **yeni** migration dosyası (`supabase/migrations/<zaman>_<ad>.sql`); mevcut migration'lar düzenlenmez (canlıya uygulanmış olabilir). Değişiklikten sonra `tests/db` testleri güncellenip çalıştırılır.
 
 ## Önemli dosyalar
-- `src/config/event.ts` — statik içerik (biyografi, görseller, ürünler, iletişim, KVKK onay bayrakları).
+- `src/config/event.ts` — statik içerik (program, konuşmacılar, ürün, görseller, iletişim, KVKK onay bayrakları).
+- Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
 - `event_settings` tablosu — tarih/mekân/kapasite (admin panelinden `/admin/ayarlar`). `*_confirmed` false ise bilgi gösterilmez.
 - `src/lib/email/` — şablonlar, gönderim, bildirimler.
 - `src/app/admin/actions.ts` — tüm admin işlemleri.

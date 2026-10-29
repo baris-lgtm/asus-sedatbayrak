@@ -5,115 +5,179 @@
  * veritabanındaki `event_settings` tablosunda tutulur ve admin panelinden
  * güncellenir (yeniden deploy gerektirmez).
  *
- * `null` veya `placeholder: true` olan alanlar sayfada açıkça
- * "Yakında duyurulacak" / görsel placeholder olarak gösterilir.
- * Doğrulanmamış bilgi gerçekmiş gibi gösterilmez.
+ * `src: null` olan görseller sayfada sade bir yüzey olarak görünür;
+ * `url: null` olan bağlantılar/düğmeler gösterilmez. Doğrulanmamış bilgi gerçekmiş gibi gösterilmez.
  */
 
 export interface ImageSlot {
-  /** public/ altındaki yol. null → etiketli placeholder kutusu gösterilir. */
+  /** public/ altındaki yol. null → sade placeholder yüzeyi gösterilir. */
   src: string | null;
   alt: string;
-  /** Placeholder'da görünen açıklama (hangi görselin gelmesi gerektiği). */
+  /** Placeholder'da (yalnızca geliştirmede) görünen açıklama. */
   placeholderLabel: string;
 }
+
+export interface Speaker {
+  name: string;
+  role: string;
+  /** Konuşmacılar bölümünde ikinci satır (ör. "Sohbet yürütücüsü"). */
+  note?: string;
+  photo: ImageSlot;
+}
+
+const photo = (name: string): ImageSlot => ({
+  src: null,
+  alt: `${name} portresi`,
+  placeholderLabel: `${name} · kare portre, min. 800×800`,
+});
+
+export const speakers = {
+  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak") },
+  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz") },
+  fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir") },
+  mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik") },
+} satisfies Record<string, Speaker>;
+
+export type SpeakerId = keyof typeof speakers;
 
 export const eventContent = {
   brand: "ASUS",
   artist: "Sedat Bayrak",
+  /** E-postalarda ve sayfa başlığında kullanılan etkinlik adı. */
   title: "ASUS × Sedat Bayrak Workshop",
-  tagline: "Mimarlık, tasarım ve teknoloji aynı deneyimde buluşuyor.",
-  topics: ["Sanat", "Mimarlık", "Tasarım", "Yaratıcı üretim"],
+  tagline: "Mimarlık, 3D modelleme ve yapay zekânın yaratıcı dünyasını ASUS ProArt ile keşfedeceğiniz özel bir workshop deneyimi.",
+  topics: ["Mimarlık", "3D modelleme", "Yapay zekâ", "Yaratıcı üretim"],
   /** Tahmini süre bilgisi — kesin saatler event_settings'ten gelir. */
   approxDurationText: "Yaklaşık 4–5 saat",
   approxEndText: "17.00 civarı",
-  /** Tarih kesinleşmeden önce gösterilen yaklaşık dönem ve şehir. Kesin bilgi event_settings'ten gelir. */
-  approxDateText: "Ekim 2026 sonu",
+  /** Tarih kesinleşmeden (admin panelinde "kesinleşti" işaretlenmeden) önce gösterilen metin. */
+  approxDateText: "Kasım 2026",
   cityHint: "İstanbul" as string | null,
+
+  /** Alt marka kilidi: "ProArt | DESIGN FUTURES" */
+  program: { name: "ProArt", sub: "Design Futures" },
 
   /** Logo dosyaları (SVG önerilir) public/brand/ altına konup yolu yazılır. null → yazı ile gösterilir. */
   logos: {
     brand: null as string | null,
+    program: null as string | null,
     artist: null as string | null,
     partner: null as string | null,
   },
   creativePartner: "Contra Creative" as string | null,
 
+  /** Sosyal medya bağlantıları — url null ise simge gösterilmez. */
+  socials: [
+    { kind: "youtube", label: "YouTube", url: null },
+    { kind: "instagram", label: "Instagram", url: null },
+    { kind: "linkedin", label: "LinkedIn", url: null },
+  ] as { kind: "youtube" | "instagram" | "linkedin"; label: string; url: string | null }[],
+
   hero: {
-    title: ["Yaratıcılığın", "yeni perspektifi"],
-    image: {
+    title: ["Mimarlığın", "Evrimi"],
+    /** public/ altındaki MP4 (H.264). null → yalnızca poster görseli gösterilir, oynatma düğmesi çıkmaz. */
+    video: null as string | null,
+    videoCaption: "Mimari vizyonun fikirden gerçeğe dönüşümü",
+    poster: {
       src: null,
-      alt: "Mimari maketler ve ASUS dizüstü bilgisayarın bulunduğu çalışma masası",
-      placeholderLabel: "Hero görseli · min. 2400×1600",
+      alt: "Çizgi eskizlerden gerçeğe dönüşen beton mimari yapı",
+      placeholderLabel: "Hero video posteri · 16:9, min. 1920×1080",
     } satisfies ImageSlot,
   },
 
-  approach: {
-    eyebrow: "Yaklaşım",
-    title: "Tasarımın arkasındaki düşünce",
-    paragraphs: [
-      "ASUS × Sedat Bayrak workshop'unda, mimarlık, tasarım ve yaratıcı üretim ekseninde ilham verici bir deneyim seni bekliyor. Fikirden mekâna, eskizden dijital üretime uzanan süreçte, teknolojinin yaratıcı düşünceyi nasıl destekleyebileceğini birlikte keşfedeceğiz.",
-      "Disiplinler arası bakış açılarıyla, tasarımın arkasındaki düşünceyi daha yakından deneyimlemek ve kendi üretim pratiğine yeni perspektifler katmak için buluşuyoruz.",
-    ],
+  about: {
+    eyebrow: "Etkinlik hakkında",
+    title: "Mimarlığın bugününü ve geleceğini birlikte konuşalım.",
+    text: "Mimarlık, yapay zekâ ve 3D modelleme ekseninde gerçek profesyonel deneyimlere dayanan, ilham verici bir paylaşım ve bilgi buluşması. Tasarımın geleceğini şekillendiren araçlar, yöntemler ve yaklaşımlar üzerine uzman isimleri bir araya getiriyoruz.",
     image: {
       src: null,
-      alt: "Masa üzerinde mimari maket ve eskizler",
-      placeholderLabel: "Yaklaşım görseli · 4:3",
+      alt: "Eskiz çizgileriyle çevrili beton mimari yapı",
+      placeholderLabel: "Etkinlik görseli · yatay, açık zemin",
     } satisfies ImageSlot,
   },
 
-  /** "Deneyimin üç boyutu" kartları. href sayfadaki ilgili bölüme gider. */
-  pillars: [
-    {
-      title: "İlham al",
-      text: "Mimarlık ve tasarımın kesişiminde farklı bakış açılarıyla ilham verici bir ortam deneyimle.",
-      href: "#sedat-bayrak",
-      image: { src: null, alt: "Eskizler ve maket parçaları", placeholderLabel: "Kart görseli 1" },
-    },
-    {
-      title: "Üretimi keşfet",
-      text: "Eskizden modele, fikirden mekâna uzanan yaratıcı üretim süreçlerini daha yakından gör.",
-      href: "#surec",
-      image: { src: null, alt: "Maket üzerinde çalışan eller", placeholderLabel: "Kart görseli 2" },
-    },
-    {
-      title: "ASUS'u deneyimle",
-      text: "Yaratıcı projelerde teknolojinin sunduğu imkânları gerçek kullanım senaryolarıyla keşfet.",
-      href: "#urun",
-      image: { src: null, alt: "Stüdyoda ASUS dizüstü bilgisayar", placeholderLabel: "Kart görseli 3" },
-    },
-  ] satisfies { title: string; text: string; href: string; image: ImageSlot }[],
+  sessions: {
+    eyebrow: "Program",
+    title: "Önerilen oturum temaları",
+    subtitle: "Mimarlık, teknoloji ve yaratıcı üretim ekseninde üç farklı bakış açısı.",
+    items: [
+      {
+        title: "Mimari görselleştirmede yapay zekâ",
+        text: "Yapay zekâ araçları, modelleme teknikleri, agent'lar ve üretim ekosistemleri üzerine gerçek deneyimler ve güncel yaklaşımlar.",
+        speakers: ["sedat", "fatih"],
+        tone: "dark",
+        image: { src: null, alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
+      },
+      {
+        title: "Yaratıcı üretim için ProArt",
+        text: "ASUS ProArt ekosistemiyle yaratıcı süreçlerde daha özgür, daha akıcı ve daha verimli bir üretim deneyimi.",
+        speakers: ["mesut"],
+        tone: "light",
+        image: { src: null, alt: "ASUS ProArt dizüstü bilgisayar", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
+      },
+      {
+        title: "Tasarım ve mimarlık pratiği",
+        text: "Strüktürel tasarım, büyük ölçekli projeler ve güncel mimarlık pratiği üzerine saha deneyimleri ve mesleki bakış açıları.",
+        speakers: ["sedat", "omer"],
+        tone: "dark",
+        image: { src: null, alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
+      },
+    ] satisfies { title: string; text: string; speakers: SpeakerId[]; tone: "dark" | "light"; image: ImageSlot }[],
+  },
+
+  speakersSection: {
+    eyebrow: "Konuşmacılar",
+    title: "Alanında uzman isimlerle ilham verici bir buluşma.",
+    text: "Mimarlık, görselleştirme, teknoloji ve yaratıcı üretim alanlarında deneyimleriyle öne çıkan uzman isimler, bilgi ve tecrübelerini paylaşıyor.",
+    order: ["sedat", "omer", "fatih", "mesut"] satisfies SpeakerId[],
+  },
+
+  product: {
+    eyebrow: "Ürün sunumu",
+    name: "ProArt P16",
+    model: "(H7607)",
+    tagline: "Yaratıcı üretim ve 3D iş akışları için tasarlanan profesyonel bir deneyim.",
+    text: "ProArt P16, mimarlık, 3D modelleme ve yaratıcı üretim süreçlerinde ihtiyaç duyulan esneklik ve güvenilirliği sunar. Fikirlerinizi gerçeğe dönüştürürken, hayal gücünüzün temposuna ayak uydurur.",
+    /** Resmî ürün sayfası. null → "ProArt P16'yı keşfet" düğmesi gösterilmez. */
+    url: null as string | null,
+    ctaLabel: "ProArt P16'yı keşfet",
+    /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
+    video: null as string | null,
+    image: {
+      src: null,
+      alt: "Beton zemin üzerinde ASUS ProArt P16 dizüstü bilgisayar",
+      placeholderLabel: "Ürün görseli · yatay, min. 2000×1200",
+    } satisfies ImageSlot,
+  },
 
   application: {
+    eyebrow: "Başvuru",
+    title: ["Katılım için", "başvurun."],
+    text: "Mimarlık, 3D modelleme ve yapay zekâ etrafında şekillenen bu özel buluşmada yer almak için aşağıdaki formu doldurun.",
     image: {
       src: null,
-      alt: "Taş sütunlar arasından İstanbul manzarası",
-      placeholderLabel: "Başvuru görseli · dikey 3:4",
+      alt: "Eskiz çizgileriyle çizilmiş mimari yapı",
+      placeholderLabel: "Başvuru köşe görseli",
     } satisfies ImageSlot,
+    form: {
+      fullName: "Ad Soyad",
+      email: "E-posta",
+      phone: "Telefon",
+      participantType: "Profesyonel / Öğrenci",
+      institution: "Kurum / Okul",
+      tools: "Kullandığınız tasarım araçları",
+      toolsPlaceholder: "Ör. AutoCAD, Revit, 3ds Max, Blender…",
+      motivation: "Katılım motivasyonunuz",
+      motivationPlaceholder: "Bu etkinliğe katılma motivasyonunuzu bizimle paylaşın…",
+      note: "Başvurular ilgili alan ve katılım motivasyonuna göre değerlendirilir. Katılım onayı e-posta ile iletilir.",
+    },
   },
 
-  artistBio: {
-    /** Onaylı biyografi metni gelene kadar null. */
-    text: null as string | null,
-    portrait: {
-      src: null,
-      alt: "Sedat Bayrak portresi",
-      placeholderLabel: "Portre · onaylı fotoğraf bekleniyor",
-    } satisfies ImageSlot,
-    works: [
-      { src: null, alt: "Sedat Bayrak çalışması 1", placeholderLabel: "Çalışma 1" },
-      { src: null, alt: "Sedat Bayrak çalışması 2", placeholderLabel: "Çalışma 2" },
-      { src: null, alt: "Sedat Bayrak çalışması 3", placeholderLabel: "Çalışma 3" },
-    ] satisfies ImageSlot[],
-    /** Doğrulanmış bağlantılar. Boş dizi → "Bağlantılar yakında" gösterilir. */
-    socials: [] as { label: string; href: string }[],
-  },
-
-  products: {
-    /** Kesinleşmiş ürün modelleri. Boşken genel placeholder gösterilir. */
-    confirmedModels: [] as { name: string; description: string; image: ImageSlot }[],
-    placeholderSlots: 3,
-  },
+  /** Admin detayında ve CSV'de gösterilen ek form yanıtları (applications.additional_answers). */
+  answerFields: [
+    { id: "tools", label: "Kullandığı tasarım araçları" },
+    { id: "motivation", label: "Katılım motivasyonu" },
+  ],
 
   contact: {
     /** Katılımcı soruları için iletişim adresi — onaylanınca doldurulacak. */
@@ -126,11 +190,4 @@ export const eventContent = {
     marketingConsentApproved: false,
     dataControllerName: null as string | null,
   },
-
-  /** Formdaki opsiyonel ek soru. null → gösterilmez. */
-  additionalQuestion: {
-    id: "motivation",
-    label: "Workshop'a neden katılmak istiyorsun? (isteğe bağlı)",
-    maxLength: 600,
-  } as { id: string; label: string; maxLength: number } | null,
 } as const;

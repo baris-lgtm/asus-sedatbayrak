@@ -12,22 +12,21 @@ test.describe("T16: mobil görünüm", () => {
     await page.goto("/");
     await noHorizontalScroll(page);
     await page.getByRole("link", { name: "Katılım için başvur" }).first().click();
-    await expect(page.getByRole("heading", { name: "Yerini ayır, yaratıcılığa katıl." })).toBeInViewport();
+    await expect(page.getByRole("heading", { name: "Katılım için başvurun." })).toBeInViewport();
 
     const email = uniqueEmail("mobil");
-    await page.getByLabel("Ad", { exact: true }).fill("Mobil");
-    await page.getByLabel("Soyad").fill("Kullanıcı");
-    await page.getByLabel("E-posta", { exact: true }).fill(email);
+    await page.getByLabel("Ad Soyad").fill("Mobil Kullanıcı");
+    await page.getByRole("textbox", { name: /^E-posta/ }).fill(email);
     await page.getByLabel("Telefon").fill("05559876543");
-    await page.getByText("Profesyonel", { exact: true }).tap();
-    await page.getByLabel("Kurum / üniversite").fill("Stüdyo");
-    await page.getByLabel("Bölüm / uzmanlık alanı").fill("İç mimarlık");
+    await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Profesyonel" });
+    await page.getByLabel("Kurum / Okul").fill("Stüdyo");
+    await page.getByLabel("Katılım motivasyonunuz").fill("İç mimarlıkta yapay zekâ.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     const submit = page.getByRole("button", { name: "Başvuruyu gönder" });
     const box = await submit.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44); // dokunma hedefi
     await submit.tap();
-    await expect(page.getByText("Başvurun başarıyla alındı.")).toBeVisible();
+    await expect(page.getByText("Başvurunuz başarıyla alındı.")).toBeVisible();
     const { data } = await service().from("applications").select("status").eq("email_normalized", email).single();
     expect(data?.status).toBe("pending");
     await page.screenshot({ path: "test-results/mobil-basvuru-basarili.png" });

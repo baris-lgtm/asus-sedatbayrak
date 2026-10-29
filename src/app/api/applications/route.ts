@@ -6,7 +6,6 @@ import { clientIp, hashKey, rateLimit } from "@/lib/rate-limit";
 import { sendApplicationReceived } from "@/lib/email/notifications";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { dbErrorCode } from "@/lib/db-errors";
-import { eventContent } from "@/config/event";
 import { siteUrl, ConfigError } from "@/lib/env";
 
 export const runtime = "nodejs";
@@ -82,8 +81,8 @@ export async function POST(req: NextRequest) {
       return json(403, { code: "closed", message: "Başvurular şu anda kapalı." });
     }
 
-    const additional: Record<string, string> = {};
-    if (eventContent.additionalQuestion && input.motivation) additional[eventContent.additionalQuestion.id] = input.motivation;
+    const additional: Record<string, string> = { motivation: input.motivation };
+    if (input.tools) additional.tools = input.tools;
 
     const db = createAdminClient();
     const { data, error } = await db
@@ -95,7 +94,7 @@ export async function POST(req: NextRequest) {
         phone: input.phone,
         participant_type: input.participantType,
         institution: input.institution,
-        department: input.department,
+        department: null,
         additional_answers: additional,
         kvkk_notice_version: settings.kvkk_notice_version,
         marketing_consent: input.marketingConsent === true,

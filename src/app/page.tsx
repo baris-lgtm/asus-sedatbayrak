@@ -1,427 +1,341 @@
-import { eventContent } from "@/config/event";
+import { eventContent, speakers, type Speaker, type SpeakerId } from "@/config/event";
 import { getEventSettings } from "@/lib/event-settings";
-import { formatEventDate, formatEventTimeRange } from "@/lib/format";
+import { formatEventDate, formatEventDateShort, formatEventTimeRange } from "@/lib/format";
 import { ImageSlot } from "@/components/image-slot";
 import { ApplicationForm } from "@/components/application-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { ArrowRight, CalendarIcon, PinIcon } from "@/components/brand";
+import { HeroVideo } from "@/components/hero-video";
+import { ArrowRight, ProgramMark } from "@/components/brand";
 
 // Etkinlik ayarları admin panelinden değişir; sayfa en geç 60 sn'de güncellenir
 // (ayar kaydında ayrıca anında yenilenir).
 export const revalidate = 60;
 
-const TBA = "Yakında duyurulacak";
+/** Görselin bir kenarını zemine eriten maskeler. */
+const fade = (dir: "left" | "right", stop = "40%") => {
+  const g = `linear-gradient(to ${dir === "left" ? "right" : "left"}, transparent 0%, #000 ${stop})`;
+  return { WebkitMaskImage: g, maskImage: g } as const;
+};
 
-/** Görselin sol kenarını zemine eriten maske (hero ve başvuru görseli). */
-const fadeLeft = {
-  WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 38%)",
-  maskImage: "linear-gradient(to right, transparent 0%, #000 38%)",
-} as const;
+function Eyebrow({ children, light = false }: { children: React.ReactNode; light?: boolean }) {
+  return <p className={`eyebrow-line ${light ? "!text-copper-ink" : ""}`}>{children}</p>;
+}
 
-function Eyebrow({ children, as: Tag = "p", id }: { children: React.ReactNode; as?: "p" | "h2"; id?: string }) {
+function SpeakerCard({ s, size = "sm", light = false }: { s: Speaker; size?: "sm" | "lg"; light?: boolean }) {
   return (
-    <Tag id={id} className="eyebrow">
-      {children}
-    </Tag>
+    <figure className={size === "sm" ? "w-[8.5rem] shrink-0" : ""}>
+      <ImageSlot
+        slot={s.photo}
+        dark={!light}
+        sizes={size === "sm" ? "136px" : "(min-width: 1024px) 22vw, 45vw"}
+        className={`${size === "sm" ? "aspect-square" : "aspect-[5/4]"} w-full grayscale`}
+      />
+      <figcaption className="mt-3">
+        <span className={`block font-medium ${size === "sm" ? "text-[13px]" : "text-base"}`}>{s.name}</span>
+        <span className={`block ${size === "sm" ? "text-[11px]" : "text-[13px]"} ${light ? "text-copper-ink" : "text-fog"}`}>
+          {s.role}
+        </span>
+        {size === "lg" && s.note && <span className="block text-[13px] text-graphite">{s.note}</span>}
+      </figcaption>
+    </figure>
+  );
+}
+
+function SpeakerNames({ ids, light = false }: { ids: readonly SpeakerId[]; light?: boolean }) {
+  return (
+    <p className={`mt-5 text-sm font-medium ${light ? "text-ink" : "text-copper"}`}>
+      {ids.map((id, i) => (
+        <span key={id}>
+          {i > 0 && (
+            <span aria-hidden className="mx-2.5 opacity-70">
+              ×
+            </span>
+          )}
+          {speakers[id].name}
+        </span>
+      ))}
+    </p>
   );
 }
 
 export default async function HomePage() {
   const settings = await getEventSettings();
-  const date = formatEventDate(settings);
+  const dateLong = formatEventDate(settings);
+  const dateShort = formatEventDateShort(settings);
   const time = formatEventTimeRange(settings);
   const venue = settings.venue_confirmed ? settings.venue_name : null;
-  const { artistBio, products, approach, pillars, hero } = eventContent;
-
-  const heroDate = date ?? eventContent.approxDateText;
-  const heroPlace = venue ?? eventContent.cityHint;
-  const pendingNote =
-    !date && !venue
-      ? "Kesin tarih ve mekân yakında açıklanacak."
-      : !date
-        ? "Kesin tarih yakında açıklanacak."
-        : !venue
-          ? "Kesin mekân yakında açıklanacak."
-          : time;
+  const { hero, about, sessions, speakersSection, product, application } = eventContent;
 
   const faqs: { q: string; a: React.ReactNode }[] = [
     {
-      q: "Etkinliğe kimler katılabilir?",
-      a: `Sanat, mimarlık ve tasarımla ilgilenen öğrenciler, akademisyenler ve profesyoneller başvurabilir. Kontenjan sınırlı olduğu için katılım, başvuruların değerlendirilmesinin ardından ekip onayıyla kesinleşir.`,
+      q: "Etkinlik kimler için uygun?",
+      a: "Mimarlık, tasarım, 3D modelleme ve yaratıcı üretimle ilgilenen profesyoneller, akademisyenler ve öğrenciler başvurabilir. Kontenjan sınırlı olduğundan katılım, başvuruların değerlendirilmesinin ardından ekip onayıyla kesinleşir.",
     },
     {
-      q: "Başvurum kabul edildi mi?",
-      a: "Formu gönderdiğinde başvurun yalnızca alınmış olur; bu kabul anlamına gelmez. Her başvuru ekip tarafından tek tek değerlendirilir ve sonucu e-postayla bildirilir.",
+      q: "Katılım için herhangi bir ücret var mı?",
+      a: "Hayır, katılım ücretsizdir. Katılımınız yalnızca başvuru ve ekip onayıyla kesinleşir.",
     },
     {
-      q: "Katılım onayı nasıl iletilir?",
-      a: "Katılım yalnızca ekip onayıyla kesinleşir. Onaylandığında sana QR kodlu kişisel bir davetiye e-postası gelir. Bu e-postayı almadıysan katılımın kesinleşmemiştir. Gelen kutunda göremiyorsan spam / gereksiz klasörünü de kontrol et.",
+      q: "Başvuru sonuçları ne zaman açıklanacak?",
+      a: "Başvurular ekip tarafından tek tek değerlendirilir ve sonuç, başvuruda yazdığınız e-posta adresine bildirilir. Onaylanan katılımcılara QR kodlu kişisel davetiye gönderilir; bu e-postayı almadıysanız katılımınız henüz kesinleşmemiştir.",
     },
     {
-      q: "Tarih ve mekân ne zaman açıklanacak?",
-      a: date
-        ? `Workshop ${date}${time ? `, ${time} saatleri arasında` : ""}${venue ? ` ${venue} mekânında` : ""} gerçekleşecek.`
-        : `Kesin tarih ve mekân belirlendiğinde bu sayfada duyurulacak ve onaylı katılımcılara e-postayla bildirilecek. Workshop'un ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
+      q: "Etkinlik çevrim içi mi gerçekleştirilecek?",
+      a: venue
+        ? `Hayır, etkinlik yüz yüze gerçekleştirilecek: ${venue}${settings.venue_address ? `, ${settings.venue_address}` : ""}. Girişte e-postayla gönderilen QR kodlu davetiyenizi okutmanız yeterli.`
+        : "Hayır, etkinlik yüz yüze gerçekleştirilecek. Mekân bilgisi kesinleştiğinde bu sayfada ve davetiyenizde paylaşılacak. Girişte e-postayla gönderilen QR kodlu davetiyenizi okutmanız yeterli.",
+    },
+    {
+      q: "Etkinlik ne zaman ve ne kadar sürecek?",
+      a: dateLong
+        ? `Workshop ${dateLong}${time ? `, ${time} saatleri arasında` : ""} gerçekleşecek.`
+        : `Kesin tarih ve saat duyurulduğunda bu sayfada ve davetiyenizde yer alacak. Programın ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
     },
     {
       q: "QR kodumu kaybedersem ne yapmalıyım?",
-      a: (
-        <>
-          Davetiye e-postasındaki “Davetiyemi aç” bağlantısıyla QR kodunu yeniden görüntüleyebilirsin. E-postaya da
-          ulaşamıyorsan bize yaz; kimliğini doğruladıktan sonra davetiyeni yeniden gönderebiliriz. Girişte e-postadaki
-          10 karakterlik giriş kodu da QR yerine kullanılabilir.
-        </>
-      ),
-    },
-    {
-      q: "Başvurumun durumunu nasıl öğrenebilirim?",
-      a: "Başvurunla ilgili her gelişme (onay, yedek liste veya sonuç) başvuruda verdiğin e-posta adresine bildirilir.",
+      a: "Davetiye e-postasındaki “Davetiyemi aç” bağlantısıyla QR kodunuzu yeniden görüntüleyebilirsiniz. Girişte e-postadaki 10 karakterlik giriş kodu da QR yerine kullanılabilir.",
     },
   ];
 
   return (
-    <>
+    <div className="bg-night font-headline text-white">
       <SiteHeader />
 
       <main id="icerik">
         {/* HERO */}
         <section aria-labelledby="hero-baslik" className="relative overflow-hidden">
-          <div
-            className="fade-in pointer-events-none absolute inset-y-0 right-0 hidden w-[64%] lg:block"
-            style={fadeLeft}
-          >
-            <ImageSlot
-              slot={hero.image}
-              priority
-              rounded={false}
-              labelRight
-              sizes="64vw"
-              className="h-full w-full"
-            />
+          <div className="absolute inset-y-0 right-0 hidden w-[60%] lg:block">
+            <HeroVideo src={hero.video} poster={hero.poster} caption={hero.videoCaption} className="h-full w-full" />
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-night to-transparent" />
           </div>
-          <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-14 sm:px-8 lg:min-h-[640px] lg:pb-28 lg:pt-24">
-            <div className="max-w-xl">
-              <Eyebrow>ASUS × Sedat Bayrak Workshop</Eyebrow>
-              <h1 id="hero-baslik" className="display rise rise-1 mt-6 text-[clamp(2.7rem,7.4vw,5.9rem)] lg:-mr-48">
-                {hero.title.map((line) => (
-                  <span key={line} className="block sm:whitespace-nowrap">
-                    {line}
-                  </span>
-                ))}
+          <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-12 sm:px-8 lg:min-h-[600px] lg:pb-24 lg:pt-16">
+            <div className="max-w-md">
+              <ProgramMark className="rise text-[15px]" />
+              <h1 id="hero-baslik" className="headline rise rise-1 mt-9 text-[clamp(3.2rem,7vw,5.4rem)] leading-[0.98]">
+                <span className="block">{hero.title[0]}</span>
+                <span className="block text-copper">{hero.title[1]}</span>
               </h1>
-              <p className="rise rise-2 mt-6 max-w-md text-lg leading-relaxed text-graphite sm:text-xl">
-                {eventContent.tagline}
-              </p>
+              <p className="rise rise-2 mt-7 max-w-sm text-[15px] leading-relaxed text-white/75">{eventContent.tagline}</p>
 
-              <div className="rise rise-3 mt-9 flex items-start gap-3">
-                <CalendarIcon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-ink/70" />
-                <div>
-                  <p className="text-[15px] font-medium">
-                    {heroDate}
-                    {heroPlace && (
-                      <>
-                        <span aria-hidden className="mx-2 text-graphite">
-                          •
-                        </span>
-                        {heroPlace}
-                      </>
-                    )}
-                  </p>
-                  {pendingNote && <p className="mt-1 text-[13px] text-graphite">{pendingNote}</p>}
-                </div>
+              <div className="rise rise-3 mt-10">
+                <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
+                <p className="mt-1.5 text-[13px] text-fog">
+                  {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
+                  {!dateShort && " · Kesin tarih yakında açıklanacak"}
+                </p>
               </div>
 
-              <div className="rise rise-3 mt-9 flex flex-wrap items-center gap-5">
-                <a href="#basvuru" className="btn btn-primary arrow-nudge">
-                  Katılım için başvur
-                  <ArrowRight />
-                </a>
-                <span className="text-[13px] text-graphite">Kontenjan sınırlı · ekip onayıyla</span>
-              </div>
+              <a href="#basvuru" className="btn-ghost-light arrow-nudge rise rise-3 mt-9">
+                Katılım için başvur
+                <ArrowRight />
+              </a>
             </div>
           </div>
-          <ImageSlot slot={hero.image} sizes="100vw" rounded={false} className="aspect-[4/3] w-full lg:hidden" />
+          <HeroVideo
+            src={hero.video}
+            poster={hero.poster}
+            caption={hero.videoCaption}
+            sizes="100vw"
+            className="aspect-video w-full lg:hidden"
+          />
         </section>
 
-        {/* YAKLAŞIM */}
-        <section id="yaklasim" aria-labelledby="yaklasim-baslik" className="scroll-mt-16">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:py-28">
-            <ImageSlot
-              slot={approach.image}
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="aspect-[4/3] w-full lg:col-span-6"
-            />
-            <div className="lg:col-span-6">
-              <Eyebrow>{approach.eyebrow}</Eyebrow>
-              <h2 id="yaklasim-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                {approach.title}
+        {/* ETKİNLİK HAKKINDA */}
+        <section id="etkinlik" aria-labelledby="etkinlik-baslik" className="relative scroll-mt-16 overflow-hidden bg-cream text-ink">
+          <div className="absolute inset-y-0 right-0 hidden w-[52%] lg:block" style={fade("left", "45%")}>
+            <ImageSlot slot={about.image} rounded={false} labelRight sizes="52vw" className="h-full w-full" />
+          </div>
+          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-24">
+            <div className="max-w-[34rem]">
+              <Eyebrow light>{about.eyebrow}</Eyebrow>
+              <h2 id="etkinlik-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
+                {about.title}
               </h2>
-              <div className="mt-7 max-w-lg space-y-5 text-[15px] leading-[1.75] text-graphite">
-                {approach.paragraphs.map((p) => (
-                  <p key={p.slice(0, 24)}>{p}</p>
-                ))}
-              </div>
+              <p className="mt-6 text-[15px] leading-[1.7] text-graphite">{about.text}</p>
             </div>
           </div>
+          <ImageSlot slot={about.image} rounded={false} sizes="100vw" className="aspect-[16/10] w-full lg:hidden" />
         </section>
 
-        {/* DENEYİMİN ÜÇ BOYUTU */}
-        <section aria-labelledby="boyut-baslik">
-          <div className="mx-auto max-w-7xl px-4 pb-20 sm:px-8 lg:pb-28">
-            <Eyebrow as="h2" id="boyut-baslik">
-              Deneyimin üç boyutu
-            </Eyebrow>
-            <ul className="mt-6 grid gap-4 md:grid-cols-3 md:gap-5">
-              {pillars.map((p) => (
-                <li key={p.title}>
-                  <a
-                    href={p.href}
-                    className="arrow-nudge group flex h-full flex-col overflow-hidden rounded-[3px] border border-rule bg-surface transition-shadow hover:shadow-[0_10px_30px_-18px_rgba(23,22,20,0.35)]"
+        {/* PROGRAM */}
+        <section id="program" aria-labelledby="program-baslik" className="scroll-mt-16">
+          <div className="mx-auto max-w-7xl px-4 pb-10 pt-20 sm:px-8 lg:pt-24">
+            <Eyebrow>{sessions.eyebrow}</Eyebrow>
+            <h2 id="program-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
+              {sessions.title}
+            </h2>
+            <p className="mt-3 text-[15px] text-white/70">{sessions.subtitle}</p>
+          </div>
+
+          <ol>
+            {sessions.items.map((item, i) => {
+              const light = item.tone === "light";
+              const n = String(i + 1).padStart(2, "0");
+              return (
+                <li
+                  key={item.title}
+                  className={`relative overflow-hidden ${light ? "bg-cream text-ink" : "border-t border-white/10 bg-night-2"}`}
+                >
+                  <div
+                    className={`absolute inset-y-0 hidden w-[34%] lg:block ${light ? "left-0" : "right-0"}`}
+                    style={fade(light ? "right" : "left", "50%")}
                   >
-                    <ImageSlot slot={p.image} rounded={false} sizes="(min-width: 768px) 30vw, 100vw" className="aspect-[2/1] w-full" />
-                    <span className="flex flex-1 flex-col p-6">
-                      <span className="display text-[1.65rem]">{p.title}</span>
-                      <span className="mt-3 flex-1 text-sm leading-relaxed text-graphite">{p.text}</span>
-                      <ArrowRight className="mt-6 h-4 w-4 text-ink" />
-                    </span>
-                  </a>
+                    <ImageSlot slot={item.image} dark={!light} rounded={false} labelRight={!light} sizes="34vw" className="h-full w-full" />
+                  </div>
+                  <div
+                    className={`relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 lg:grid-cols-12 lg:items-center lg:py-16 ${
+                      light ? "" : ""
+                    }`}
+                  >
+                    <div className={`flex gap-6 sm:gap-9 ${light ? "lg:col-span-5 lg:col-start-5" : "lg:col-span-6"}`}>
+                      <span
+                        aria-hidden
+                        className={`headline w-[3.4rem] shrink-0 text-[clamp(3.2rem,5.4vw,4.6rem)] sm:w-[5.5rem] font-extralight leading-none ${light ? "text-copper-ink" : "text-copper"}`}
+                      >
+                        {n}
+                      </span>
+                      <div className="pt-2">
+                        <h3 className="headline text-[1.6rem] sm:text-[1.85rem]">
+                          <span className="sr-only">Oturum {i + 1}: </span>
+                          {item.title}
+                        </h3>
+                        <p className={`mt-3 max-w-md text-[15px] leading-relaxed ${light ? "text-graphite" : "text-white/70"}`}>
+                          {item.text}
+                        </p>
+                        <SpeakerNames ids={item.speakers} light={light} />
+                      </div>
+                    </div>
+                    <div className={`flex gap-4 ${light ? "lg:col-span-3 lg:col-start-10 lg:justify-end" : "lg:col-span-4"}`}>
+                      {item.speakers.map((id) => (
+                        <SpeakerCard key={id} s={speakers[id]} light={light} />
+                      ))}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+
+        {/* KONUŞMACILAR */}
+        <section id="konusmacilar" aria-labelledby="konusmaci-baslik" className="scroll-mt-16 bg-cream text-ink">
+          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-24">
+            <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-6">
+                <Eyebrow light>{speakersSection.eyebrow}</Eyebrow>
+                <h2 id="konusmaci-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
+                  {speakersSection.title}
+                </h2>
+              </div>
+              <p className="max-w-md text-[15px] leading-[1.7] text-graphite lg:col-span-5 lg:col-start-8">
+                {speakersSection.text}
+              </p>
+            </div>
+            <ul className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+              {speakersSection.order.map((id) => (
+                <li key={id}>
+                  <SpeakerCard s={speakers[id]} size="lg" light />
                 </li>
               ))}
             </ul>
           </div>
         </section>
 
-        {/* SEDAT BAYRAK */}
-        <section id="sedat-bayrak" aria-labelledby="sanatci-baslik" className="scroll-mt-16 border-t border-rule">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:gap-16 lg:py-28">
-            <div className="lg:col-span-6 lg:pt-6">
-              <Eyebrow>Sanatçı</Eyebrow>
-              <h2 id="sanatci-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                Sedat Bayrak
+        {/* ÜRÜN */}
+        <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink">
+          <div className="absolute inset-y-0 right-0 hidden w-[58%] lg:block" style={fade("left", "40%")}>
+            <ImageSlot slot={product.image} rounded={false} labelRight sizes="58vw" className="h-full w-full" />
+          </div>
+          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
+            <div className="max-w-md">
+              <Eyebrow light>{product.eyebrow}</Eyebrow>
+              <h2 id="urun-baslik" className="headline mt-6 text-[clamp(2.3rem,4.2vw,3.3rem)]">
+                {product.name} <span className="whitespace-nowrap">{product.model}</span>
               </h2>
-              {artistBio.text ? (
-                <p className="mt-7 max-w-lg text-[15px] leading-[1.75] text-graphite">{artistBio.text}</p>
-              ) : (
-                <p className="mt-7 max-w-lg text-[15px] leading-[1.75] text-graphite">
-                  Sanatçının onaylı biyografisi yakında burada yer alacak.
-                </p>
-              )}
-              <div className="mt-10 grid max-w-lg grid-cols-3 gap-3">
-                {artistBio.works.map((w) => (
-                  <ImageSlot key={w.alt} slot={w} sizes="(min-width: 1024px) 14vw, 30vw" className="aspect-square" />
-                ))}
-              </div>
-              {artistBio.socials.length > 0 && (
-                <ul className="mt-6 flex flex-wrap gap-6 text-sm">
-                  {artistBio.socials.map((s) => (
-                    <li key={s.href}>
-                      <a href={s.href} rel="noopener noreferrer" target="_blank" className="arrow-nudge inline-flex items-center gap-2 font-medium">
-                        {s.label}
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+              <p className="mt-4 text-lg leading-snug">{product.tagline}</p>
+              <p className="mt-5 text-[15px] leading-[1.7] text-graphite">{product.text}</p>
+              {product.url && (
+                <a href={product.url} target="_blank" rel="noopener noreferrer" className="btn-copper arrow-nudge mt-8">
+                  {product.ctaLabel}
+                  <ArrowRight />
+                </a>
               )}
             </div>
-            <ImageSlot
-              slot={artistBio.portrait}
-              sizes="(min-width: 1024px) 40vw, 100vw"
-              className="order-first aspect-[4/5] w-full lg:order-none lg:col-span-5 lg:col-start-8"
-            />
+            {product.video && (
+              <HeroVideo
+                src={product.video}
+                poster={product.image}
+                caption={`${product.name} tanıtım videosu`}
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="mt-10 aspect-video w-full max-w-md overflow-hidden rounded-[3px]"
+              />
+            )}
           </div>
+          <ImageSlot slot={product.image} rounded={false} sizes="100vw" className="aspect-[16/10] w-full lg:hidden" />
         </section>
 
-        {/* ASUS ÜRÜN DENEYİMİ */}
-        <section id="urun" aria-labelledby="urun-baslik" className="scroll-mt-16 bg-mist">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-            <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
-              <div className="lg:col-span-6">
-                <Eyebrow>Ürün deneyimi</Eyebrow>
-                <h2 id="urun-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                  ASUS ile üretim
-                </h2>
-              </div>
-              <p className="max-w-md text-[15px] leading-[1.75] text-graphite lg:col-span-5 lg:col-start-8">
-                Atölyede yaratıcı üretimi destekleyen ASUS teknolojileri deneyimlenecek. Kullanılacak ürün modelleri
-                kesinleştiğinde burada tanıtılacak.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-5 sm:grid-cols-3">
-              {products.confirmedModels.length > 0
-                ? products.confirmedModels.map((m) => (
-                    <figure key={m.name}>
-                      <ImageSlot slot={m.image} sizes="(min-width: 640px) 30vw, 100vw" className="aspect-[4/3]" />
-                      <figcaption className="mt-4">
-                        <span className="display block text-xl">{m.name}</span>
-                        <span className="mt-1 block text-sm text-graphite">{m.description}</span>
-                      </figcaption>
-                    </figure>
-                  ))
-                : Array.from({ length: products.placeholderSlots }, (_, i) => (
-                    <ImageSlot
-                      key={i}
-                      slot={{ src: null, alt: `ASUS ürün görseli ${i + 1}`, placeholderLabel: "Ürün görseli · model kesinleşince" }}
-                      className="aspect-[4/3]"
-                    />
-                  ))}
-            </div>
+        {/* BAŞVURU */}
+        <section id="basvuru" aria-labelledby="basvuru-baslik" className="relative scroll-mt-16 overflow-hidden">
+          <div className="absolute bottom-0 left-0 hidden h-[45%] w-[34%] lg:block" style={fade("right", "60%")}>
+            <ImageSlot slot={application.image} dark rounded={false} sizes="34vw" className="h-full w-full opacity-70" />
           </div>
-        </section>
-
-        {/* KATILIM SÜRECİ — gerçek bir sıra olduğu için numaralı */}
-        <section id="surec" aria-labelledby="surec-baslik" className="scroll-mt-16">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-            <Eyebrow>Süreç</Eyebrow>
-            <h2 id="surec-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-              Katılım nasıl kesinleşir
-            </h2>
-            <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ["Başvur", "Formu doldur. Başvurun kaydedilir ve sana alındı e-postası gelir."],
-                ["Değerlendirme", "Her başvuru ekip tarafından tek tek incelenir. Form göndermek katılımı kesinleştirmez."],
-                ["Onay ve davetiye", "Onaylanan katılımcılara kişiye özel, QR kodlu davetiye e-postayla gönderilir."],
-                ["Girişte okut", "Etkinlik günü QR kodunu girişte okutman yeterli. Her davetiye tek kişilik ve tek kullanımlıktır."],
-              ].map(([title, body], i) => (
-                <li key={title} className="border-t border-ink/80 pt-5">
-                  <span className="display block text-lg text-blue">{String(i + 1).padStart(2, "0")}</span>
-                  <h3 className="mt-3 text-base font-semibold">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-graphite">{body}</p>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-10 max-w-2xl text-sm leading-relaxed text-graphite">
-              Kontenjan sınırlıdır. Kapasite dolduğunda uygun başvurular yedek listeye alınabilir; yer açılırsa yedek
-              listedeki katılımcılar e-postayla bilgilendirilir.
-            </p>
-          </div>
-        </section>
-
-        {/* BAŞVURU FORMU */}
-        <section id="basvuru" aria-labelledby="basvuru-baslik" className="relative scroll-mt-16 overflow-hidden border-y border-rule bg-[#f3f0ea]">
-          <div className="absolute inset-y-0 right-0 hidden w-[24%] xl:block" style={fadeLeft}>
-            <ImageSlot slot={eventContent.application.image} rounded={false} labelRight sizes="24vw" className="h-full w-full" />
-          </div>
-          <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-28">
-            <div className="lg:col-span-4 xl:col-span-4">
-              <Eyebrow>Başvuru</Eyebrow>
-              <h2 id="basvuru-baslik" className="display mt-5 text-[clamp(2.5rem,4.2vw,3.5rem)]">
-                Yerini ayır,
+          <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-24">
+            <div className="lg:col-span-4">
+              <Eyebrow>{application.eyebrow}</Eyebrow>
+              <h2 id="basvuru-baslik" className="headline mt-6 text-[clamp(2.4rem,4.2vw,3.3rem)]">
+                {application.title[0]}
                 <br />
-                yaratıcılığa katıl.
+                {application.title[1]}
               </h2>
-              <p className="mt-6 max-w-sm text-[15px] leading-[1.75] text-graphite">
-                Kontenjanla sınırlı olan bu özel deneyimin bir parçası olmak için başvur. Başvurular değerlendirilerek
-                katılım onayı e-posta ile iletilecek.
-              </p>
-              <p className="mt-6 text-[13px] text-graphite">Formu doldurmak yaklaşık iki dakika sürer.</p>
+              <p className="mt-6 max-w-xs text-[15px] leading-[1.7] text-white/70">{application.text}</p>
             </div>
-            <div className="lg:col-span-8 xl:col-span-5">
+            <div className="lg:col-span-8">
               {settings.applications_open ? (
                 <ApplicationForm
                   kvkkApproved={eventContent.legal.kvkkNoticeApproved}
-                  additionalQuestion={eventContent.additionalQuestion}
+                  copy={application.form}
                   turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null}
                 />
               ) : (
-                <div role="status" className="rounded-[3px] border border-rule bg-surface p-8">
-                  <h3 className="display text-3xl">Başvurular şu anda kapalı</h3>
-                  <p className="mt-3 leading-relaxed text-graphite">Yeni başvuru alınmıyor. Gelişmeler bu sayfada duyurulacak.</p>
+                <div role="status" className="rounded-[4px] border border-white/12 bg-white/[0.03] p-8">
+                  <h3 className="headline text-3xl">Başvurular şu anda kapalı</h3>
+                  <p className="mt-3 leading-relaxed text-fog">Yeni başvuru alınmıyor. Gelişmeler bu sayfada duyurulacak.</p>
                 </div>
               )}
             </div>
           </div>
         </section>
 
-        {/* MEKÂN VE ULAŞIM */}
-        <section id="mekan" aria-labelledby="mekan-baslik" className="scroll-mt-16">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-28">
-            <div className="lg:col-span-4">
-              <Eyebrow>Etkinlik</Eyebrow>
-              <h2 id="mekan-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                Mekân ve ulaşım
-              </h2>
-            </div>
-            <dl className="grid gap-px overflow-hidden rounded-[3px] border border-rule bg-rule sm:grid-cols-2 lg:col-span-8">
-              <div className="bg-surface p-6">
-                <dt className="flex items-center gap-2 text-[13px] text-graphite">
-                  <CalendarIcon className="h-4 w-4" /> Tarih
-                </dt>
-                <dd className="mt-2 font-medium">{date ?? `${eventContent.approxDateText} · kesin tarih yakında`}</dd>
-                {time && <dd className="text-sm text-graphite">{time}</dd>}
-              </div>
-              <div className="bg-surface p-6">
-                <dt className="text-[13px] text-graphite">Süre ve format</dt>
-                <dd className="mt-2 font-medium">{eventContent.approxDurationText}</dd>
-                <dd className="text-sm text-graphite">Uygulamalı atölye</dd>
-              </div>
-              <div className="bg-surface p-6">
-                <dt className="flex items-center gap-2 text-[13px] text-graphite">
-                  <PinIcon className="h-4 w-4" /> Mekân
-                </dt>
-                <dd className="mt-2 font-medium">{venue ?? TBA}</dd>
-                <dd className="text-sm text-graphite">
-                  {settings.venue_confirmed && settings.venue_address ? settings.venue_address : eventContent.cityHint ?? ""}
-                </dd>
-                {settings.venue_confirmed && settings.venue_map_url && (
-                  <dd className="mt-4">
-                    <a href={settings.venue_map_url} target="_blank" rel="noopener noreferrer" className="arrow-nudge inline-flex items-center gap-2 text-sm font-medium text-blue">
-                      Haritada aç <ArrowRight className="h-3.5 w-3.5" />
-                    </a>
-                  </dd>
-                )}
-              </div>
-              <div className="bg-surface p-6">
-                <dt className="text-[13px] text-graphite">Ulaşım</dt>
-                <dd className="mt-2 whitespace-pre-line text-sm leading-relaxed">
-                  {settings.venue_confirmed && settings.transport_info
-                    ? settings.transport_info
-                    : "Mekân kesinleştiğinde ulaşım bilgileri burada ve davetiyende paylaşılacak."}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </section>
-
         {/* SSS */}
-        <section id="sss" aria-labelledby="sss-baslik" className="scroll-mt-16 border-t border-rule">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-28">
-            <div className="lg:col-span-5">
-              <Eyebrow>Sıkça sorulan sorular</Eyebrow>
-              <h2 id="sss-baslik" className="display mt-5 text-[clamp(2.4rem,4.6vw,3.6rem)]">
-                Merak edilenler.
+        <section id="sss" aria-labelledby="sss-baslik" className="scroll-mt-16 bg-cream text-ink">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-24">
+            <div className="lg:col-span-4">
+              <Eyebrow light>Sık sorulan sorular</Eyebrow>
+              <h2 id="sss-baslik" className="headline mt-6 text-[clamp(2.4rem,4.2vw,3.3rem)]">
+                Merak
+                <br />
+                edilenler.
               </h2>
             </div>
-            <div className="divide-y divide-rule overflow-hidden rounded-[3px] border border-rule bg-surface lg:col-span-7">
+            <div className="divide-y divide-ink/12 border-y border-ink/12 lg:col-span-7 lg:col-start-6">
               {faqs.map((f) => (
                 <details key={f.q} className="group">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 px-5 py-4 text-[15px] font-medium transition-colors hover:bg-paper [&::-webkit-details-marker]:hidden">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-[15px] [&::-webkit-details-marker]:hidden">
                     {f.q}
-                    <span aria-hidden className="text-xl font-light leading-none text-ink/70 transition-transform duration-200 group-open:rotate-45">
+                    <span aria-hidden className="text-xl font-light leading-none transition-transform duration-200 group-open:rotate-45">
                       +
                     </span>
                   </summary>
-                  <div className="max-w-2xl px-5 pb-5 text-sm leading-relaxed text-graphite">{f.a}</div>
+                  <div className="max-w-2xl pb-5 text-sm leading-relaxed text-graphite">{f.a}</div>
                 </details>
               ))}
             </div>
           </div>
         </section>
-
-        {/* SON ÇAĞRI */}
-        <section aria-label="Başvuru çağrısı" className="bg-ink text-paper">
-          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-4 py-16 sm:px-8 md:flex-row md:items-center">
-            <p className="display text-[clamp(2.2rem,4.2vw,3.4rem)]">Yerini ayırmak için başvur.</p>
-            <a href="#basvuru" className="btn btn-on-dark arrow-nudge">
-              Katılım için başvur
-              <ArrowRight />
-            </a>
-          </div>
-        </section>
       </main>
 
       <SiteFooter />
-    </>
+    </div>
   );
 }

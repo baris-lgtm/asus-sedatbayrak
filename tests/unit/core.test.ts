@@ -129,3 +129,11 @@ test("Telefon görüntüleme", () => {
   assert.equal(displayPhone("+442079460958"), "0044 2079460958");
   assert.ok(!/^[=+\-@]/.test(displayPhone("+905551112233")), "CSV'de formül önlemi gerektirmez");
 });
+
+test("Ad Soyad ayrıştırma: son kelime soyad", async () => {
+  const { splitFullName } = await import("../../src/lib/validation/application");
+  assert.deepEqual(splitFullName("  Ayşe  Nur Yılmaz "), { firstName: "Ayşe Nur", lastName: "Yılmaz" });
+  assert.deepEqual(splitFullName("Can Demir"), { firstName: "Can", lastName: "Demir" });
+  assert.equal(splitFullName("Tekkelime"), null);
+  assert.equal(splitFullName(""), null);
+});

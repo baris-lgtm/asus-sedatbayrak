@@ -91,14 +91,13 @@ export default async function ApplicationDetail({
   const canWaitlist = ["pending", "reviewing", "rejected"].includes(s);
   const canReject = ["pending", "reviewing", "waitlisted"].includes(s);
   const canCancel = ["pending", "reviewing", "waitlisted", "approved"].includes(s);
-  const motivation = eventContent.additionalQuestion ? app.additional_answers?.[eventContent.additionalQuestion.id] : undefined;
 
   const rows: [string, React.ReactNode][] = [
     ["E-posta", <a key="e" href={`mailto:${app.email}`} className="break-all underline">{app.email}</a>],
     ["Telefon", <a key="t" href={`tel:${app.phone}`} className="underline tabular-nums">{app.phone}</a>],
     ["Katılımcı tipi", PARTICIPANT_LABELS[app.participant_type]],
-    ["Kurum / üniversite", app.institution],
-    ["Bölüm / uzmanlık", app.department],
+    ["Kurum / okul", app.institution],
+    ...(app.department ? ([["Bölüm / uzmanlık", app.department]] as [string, React.ReactNode][]) : []),
     ["Başvuru tarihi", formatDateTime(app.created_at)],
     ["KVKK metin sürümü", `${app.kvkk_notice_version} (${formatDateTime(app.kvkk_acknowledged_at)})`],
     ["Pazarlama izni", app.marketing_consent ? `Var — ${formatDateTime(app.marketing_consent_at)} (${app.marketing_consent_version ?? "—"})` : "Yok"],
@@ -127,12 +126,12 @@ export default async function ApplicationDetail({
                 </div>
               ))}
             </dl>
-            {eventContent.additionalQuestion && (
-              <div className="mt-4 border-t-2 border-ink pt-4">
-                <p className="text-sm text-graphite">{eventContent.additionalQuestion.label}</p>
-                <p className="mt-1 whitespace-pre-line">{motivation || "—"}</p>
+            {eventContent.answerFields.map((f) => (
+              <div key={f.id} className="mt-4 border-t border-rule pt-4">
+                <p className="text-sm text-graphite">{f.label}</p>
+                <p className="mt-1 whitespace-pre-line">{app.additional_answers?.[f.id] || "—"}</p>
               </div>
-            )}
+            ))}
           </section>
 
           <section aria-labelledby="davetiye" className="border border-rule bg-paper p-5">

@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Veriler okunamadı. Tekrar dene." }, { status: 503 });
   }
 
-  const q = eventContent.additionalQuestion;
   const csv = toCsv(data, [
     { header: "Ad", value: (r) => r.first_name },
     { header: "Soyad", value: (r) => r.last_name },
@@ -38,7 +37,10 @@ export async function GET(req: NextRequest) {
     { header: "Katılımcı tipi", value: (r) => PARTICIPANT_LABELS[r.participant_type] },
     { header: "Kurum", value: (r) => r.institution },
     { header: "Bölüm", value: (r) => r.department },
-    ...(q ? [{ header: "Ek soru yanıtı", value: (r: ListedApplication) => r.additional_answers?.[q.id] ?? "" }] : []),
+    ...eventContent.answerFields.map((f) => ({
+      header: f.label,
+      value: (r: ListedApplication) => r.additional_answers?.[f.id] ?? "",
+    })),
     { header: "Durum", value: (r) => STATUS_LABELS[r.status] },
     { header: "Başvuru tarihi", value: (r) => formatDateTime(r.created_at) },
     { header: "İnceleme tarihi", value: (r) => formatDateTime(r.reviewed_at) },

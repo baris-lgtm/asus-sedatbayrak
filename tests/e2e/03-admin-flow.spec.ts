@@ -183,7 +183,7 @@ test.describe("Admin paneli", () => {
     await expect(page.getByText("Ayarlar kaydedildi.")).toBeVisible();
 
     await page.goto("/");
-    await expect(page.getByText("31 Ekim 2026 Cumartesi").first()).toBeVisible();
+    await expect(page.getByText("31 Ekim 2026", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("12:00 – 17:00").first()).toBeVisible();
     await expect(page.getByText("Test Sanat Merkezi").first()).toBeVisible();
 
@@ -203,8 +203,8 @@ test("T10: e-posta sağlayıcısı hata verirse başvuru korunur, hata loglanır
   const res = await request.post("http://localhost:3001/api/applications", {
     headers: { origin: "http://localhost:3001" },
     data: {
-      firstName: "Hata", lastName: "Senaryosu", email, phone: "05551234567", participantType: "student",
-      institution: "Test", department: "Test", kvkkAcknowledged: true,
+      fullName: "Hata Senaryosu", email, phone: "05551234567", participantType: "student",
+      institution: "Test", motivation: "Test motivasyonu", kvkkAcknowledged: true,
     },
   });
   expect(res.status()).toBe(201);

@@ -5,12 +5,17 @@ test.describe("Landing page ve başvuru formu", () => {
   test("ana sayfa tüm bölümleri gösterir ve placeholder'lar açıkça işaretli", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/ASUS × Sedat Bayrak Workshop/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Yaratıcılığın");
-    for (const h of ["Tasarımın arkasındaki düşünce", "Deneyimin üç boyutu", "Sedat Bayrak", "ASUS ile üretim", "Katılım nasıl kesinleşir", "Yerini ayır, yaratıcılığa katıl.", "Mekân ve ulaşım", "Merak edilenler."]) {
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Mimarlığın");
+    for (const h of ["Mimarlığın bugününü ve geleceğini birlikte konuşalım.", "Önerilen oturum temaları", "Alanında uzman isimlerle ilham verici bir buluşma.", "ProArt P16 (H7607)", "Katılım için başvurun.", "Merak edilenler."]) {
       await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
     }
     // Kesinleşmemiş bilgi gerçekmiş gibi gösterilmiyor
-    await expect(page.getByText("Yakında duyurulacak").first()).toBeVisible();
+    // (Tarih kesinleşme gösterimi 03-admin-flow "ayarlar" testinde doğrulanır; ana sayfa 60 sn önbellekli.)
+    // Program: 3 oturum, konuşmacılar
+    await expect(page.locator("#program ol > li")).toHaveCount(3);
+    await expect(page.locator("#konusmacilar li")).toHaveCount(4);
+    // Ürün bağlantısı tanımlanmadıkça düğme gösterilmez
+    await expect(page.getByRole("link", { name: /ProArt P16'yı keşfet/ })).toHaveCount(0);
     await expect(page.getByRole("img", { name: /görsel henüz eklenmedi/ }).first()).toBeVisible();
     // SSS — 6 soru
     await expect(page.locator("#sss details")).toHaveCount(6);
@@ -22,34 +27,36 @@ test.describe("Landing page ve başvuru formu", () => {
   test("T2: boş ve hatalı alanlar Türkçe hata mesajıyla reddedilir (istemci)", async ({ page }) => {
     await page.goto("/#basvuru");
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
-    await expect(page.getByText("Ad alanını doldurmalısın.", { exact: true })).toBeVisible();
-    await expect(page.getByText("E-posta adresini yazmalısın.")).toBeVisible();
-    await expect(page.getByText("Devam etmek için aydınlatma metnini okuduğunu onaylamalısın.")).toBeVisible();
-    await page.getByLabel("E-posta", { exact: true }).fill("gecersiz-eposta");
+    await expect(page.getByText("Adınızı ve soyadınızı yazın.", { exact: true })).toBeVisible();
+    await expect(page.getByText("E-posta adresinizi yazın.")).toBeVisible();
+    await expect(page.getByText("Katılım motivasyonunuzu kısaca yazın.")).toBeVisible();
+    await expect(page.getByText("Devam etmek için aydınlatma metnini okuduğunuzu onaylayın.")).toBeVisible();
+    await page.getByLabel("Ad Soyad").fill("Tekkelime");
+    await page.getByRole("textbox", { name: /^E-posta/ }).fill("gecersiz-eposta");
     await page.getByLabel("Telefon").fill("123");
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
-    await expect(page.getByText("Geçerli bir e-posta adresi yaz (ör. ad@ornek.com).")).toBeVisible();
-    await expect(page.getByText(/Geçerli bir telefon numarası yaz/)).toBeVisible();
+    await expect(page.getByText("Geçerli bir e-posta adresi yazın (ör. ad@ornek.com).")).toBeVisible();
+    await expect(page.getByText(/Adınızı ve soyadınızı birlikte yazın/)).toBeVisible();
+    await expect(page.getByText(/Geçerli bir telefon numarası yazın/)).toBeVisible();
     // İlk hatalı alana odaklanılır
-    await expect(page.getByLabel("Ad", { exact: true })).toBeFocused();
+    await expect(page.getByLabel("Ad Soyad")).toBeFocused();
   });
 
   test("T1/T3/T4/T9: geçerli başvuru kaydedilir, pending kalır, alındı e-postası loglanır", async ({ page }) => {
     const email = uniqueEmail("form");
     await page.goto("/#basvuru");
-    await page.getByLabel("Ad", { exact: true }).fill("Elif");
-    await page.getByLabel("Soyad").fill("Yılmaz");
-    await page.getByLabel("E-posta", { exact: true }).fill(email.toUpperCase());
+    await page.getByLabel("Ad Soyad").fill("Elif Su Yılmaz");
+    await page.getByRole("textbox", { name: /^E-posta/ }).fill(email.toUpperCase());
     await page.getByLabel("Telefon").fill("0532 123 45 67");
-    await page.getByText("Öğrenci", { exact: true }).click();
-    await page.getByLabel("Kurum / üniversite").fill("İTÜ");
-    await page.getByLabel("Bölüm / uzmanlık alanı").fill("Mimarlık");
-    await page.getByLabel(/neden katılmak/).fill("Dijital üretim araçlarını öğrenmek istiyorum.");
+    await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Öğrenci" });
+    await page.getByLabel("Kurum / Okul").fill("İTÜ");
+    await page.getByLabel("Kullandığınız tasarım araçları").fill("Revit, Blender");
+    await page.getByLabel("Katılım motivasyonunuz").fill("Dijital üretim araçlarını öğrenmek istiyorum.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
 
-    await expect(page.getByText("Başvurun başarıyla alındı.")).toBeVisible();
-    await expect(page.getByText("Bu ekran başvurunun kabul edildiği anlamına gelmez.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Başvurunuz başarıyla alındı.")).toBeVisible();
+    await expect(page.getByText("Bu ekran başvurunuzun kabul edildiği anlamına gelmez.", { exact: false })).toBeVisible();
 
     const { data } = await service().from("applications").select("*").eq("email_normalized", email).single();
     expect(data.status).toBe("pending");
@@ -58,6 +65,8 @@ test.describe("Landing page ve başvuru formu", () => {
     expect(data.marketing_consent_at).toBeNull();
     expect(data.kvkk_notice_version).toBe("TASLAK-v0");
     expect(data.additional_answers.motivation).toContain("Dijital");
+    expect(data.additional_answers.tools).toBe("Revit, Blender");
+    expect(data).toMatchObject({ first_name: "Elif Su", last_name: "Yılmaz", participant_type: "student", institution: "İTÜ", department: null });
 
     const { data: logs } = await service().from("email_logs").select("email_type, status, provider_message_id").eq("application_id", data.id);
     expect(logs).toEqual([expect.objectContaining({ email_type: "application_received", status: "sent" })]);
@@ -69,8 +78,8 @@ test.describe("Landing page ve başvuru formu", () => {
     const res = await request.post("/api/applications", {
       headers: { origin: "http://localhost:3000" },
       data: {
-        firstName: "Can", lastName: "Demir", email, phone: "05551234567", participantType: "professional",
-        institution: "Serbest", department: "Tasarım", kvkkAcknowledged: true, marketingConsent: true,
+        fullName: "Can Demir", email, phone: "05551234567", participantType: "professional",
+        institution: "Serbest", motivation: "Test motivasyonu", kvkkAcknowledged: true, marketingConsent: true,
       },
     });
     expect(res.status()).toBe(201);
@@ -82,13 +91,14 @@ test.describe("Landing page ve başvuru formu", () => {
   test("T2 (sunucu): istemci atlatılsa da sunucu doğrular", async ({ request }) => {
     const res = await request.post("/api/applications", {
       headers: { origin: "http://localhost:3000" },
-      data: { firstName: "", email: "kotu", phone: "1", participantType: "hacker", kvkkAcknowledged: false },
+      data: { fullName: "", email: "kotu", phone: "1", participantType: "hacker", kvkkAcknowledged: false },
     });
     expect(res.status()).toBe(422);
     const body = await res.json();
     expect(body.fieldErrors).toMatchObject({
-      firstName: expect.any(String),
-      email: "Geçerli bir e-posta adresi yaz (ör. ad@ornek.com).",
+      fullName: expect.any(String),
+      motivation: expect.any(String),
+      email: "Geçerli bir e-posta adresi yazın (ör. ad@ornek.com).",
       participantType: expect.any(String),
       kvkkAcknowledged: expect.any(String),
     });
@@ -97,8 +107,8 @@ test.describe("Landing page ve başvuru formu", () => {
   test("T15: aynı e-posta (farklı harf) ikinci kez başvuramaz", async ({ request, page }) => {
     const email = uniqueEmail("mukerrer");
     const payload = {
-      firstName: "Ali", lastName: "Kaya", email, phone: "05551234567", participantType: "academic",
-      institution: "ODTÜ", department: "Endüstriyel Tasarım", kvkkAcknowledged: true,
+      fullName: "Ali Kaya", email, phone: "05551234567", participantType: "academic",
+      institution: "ODTÜ", motivation: "Test motivasyonu", kvkkAcknowledged: true,
     };
     const h = { origin: "http://localhost:3000" };
     expect((await request.post("/api/applications", { headers: h, data: payload })).status()).toBe(201);
@@ -108,13 +118,12 @@ test.describe("Landing page ve başvuru formu", () => {
 
     // UI'da da anlaşılır mesaj
     await page.goto("/#basvuru");
-    await page.getByLabel("Ad", { exact: true }).fill("Ali");
-    await page.getByLabel("Soyad").fill("Kaya");
-    await page.getByLabel("E-posta", { exact: true }).fill(email);
+    await page.getByLabel("Ad Soyad").fill("Ali Kaya");
+    await page.getByRole("textbox", { name: /^E-posta/ }).fill(email);
     await page.getByLabel("Telefon").fill("05551234567");
-    await page.getByText("Akademisyen", { exact: true }).click();
-    await page.getByLabel("Kurum / üniversite").fill("ODTÜ");
-    await page.getByLabel("Bölüm / uzmanlık alanı").fill("Tasarım");
+    await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Akademisyen" });
+    await page.getByLabel("Kurum / Okul").fill("ODTÜ");
+    await page.getByLabel("Katılım motivasyonunuz").fill("Merak ediyorum.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
     await expect(page.locator("main [role=alert]")).toContainText("daha önce başvuru yapılmış");
@@ -124,28 +133,27 @@ test.describe("Landing page ve başvuru formu", () => {
     const email = uniqueEmail("ag");
     await page.goto("/#basvuru");
     await page.route("/api/applications", (r) => r.abort("internetdisconnected"));
-    await page.getByLabel("Ad", { exact: true }).fill("Deniz");
-    await page.getByLabel("Soyad").fill("Ak");
-    await page.getByLabel("E-posta", { exact: true }).fill(email);
+    await page.getByLabel("Ad Soyad").fill("Deniz Ak");
+    await page.getByRole("textbox", { name: /^E-posta/ }).fill(email);
     await page.getByLabel("Telefon").fill("05551234567");
-    await page.getByText("Diğer", { exact: true }).click();
-    await page.getByLabel("Kurum / üniversite").fill("Serbest");
-    await page.getByLabel("Bölüm / uzmanlık alanı").fill("Fotoğraf");
+    await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Diğer" });
+    await page.getByLabel("Kurum / Okul").fill("Serbest");
+    await page.getByLabel("Katılım motivasyonunuz").fill("Fotoğraf ve mimari.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
     await expect(page.locator("main [role=alert]")).toContainText("Bağlantı kurulamadı");
-    await expect(page.getByLabel("E-posta", { exact: true })).toHaveValue(email);
+    await expect(page.getByRole("textbox", { name: /^E-posta/ })).toHaveValue(email);
 
     await page.unroute("/api/applications");
     await page.getByRole("button", { name: "Tekrar gönder" }).click();
-    await expect(page.getByText("Başvurun başarıyla alındı.")).toBeVisible();
+    await expect(page.getByText("Başvurunuz başarıyla alındı.")).toBeVisible();
   });
 
   test("spam koruması: honeypot dolu ise kayıt yapılmaz; kökensiz istek reddedilir", async ({ request }) => {
     const email = uniqueEmail("bot");
     const data = {
-      firstName: "Bot", lastName: "Bot", email, phone: "05551234567", participantType: "other",
-      institution: "x", department: "x", kvkkAcknowledged: true, website: "http://spam.example",
+      fullName: "Bot Bot", email, phone: "05551234567", participantType: "other",
+      institution: "x", motivation: "Test motivasyonu", kvkkAcknowledged: true, website: "http://spam.example",
     };
     expect((await request.post("/api/applications", { headers: { origin: "http://localhost:3000" }, data })).status()).toBe(201);
     const { count } = await service().from("applications").select("id", { count: "exact", head: true }).eq("email_normalized", email);

@@ -23,6 +23,27 @@ export function ArtistMark({ className = "" }: { className?: string }) {
   );
 }
 
+/** "ProArt | DESIGN FUTURES" alt marka kilidi (logo dosyası yoksa yazı). */
+export function ProgramMark({ className = "" }: { className?: string }) {
+  const src = eventContent.logos.program;
+  if (src) return <img src={src} alt={`${eventContent.program.name} ${eventContent.program.sub}`} className={`h-[1.4em] w-auto ${className}`} />;
+  return (
+    <span className={`inline-flex items-center gap-3 ${className}`}>
+      <span className="font-headline text-[1.45em] font-medium tracking-[-0.01em] text-copper">{eventContent.program.name}</span>
+      <span aria-hidden className="h-[1.2em] w-px bg-white/45" />
+      <span lang="en" className="text-[0.82em] font-medium uppercase tracking-[0.08em] text-white/90">{eventContent.program.sub}</span>
+    </span>
+  );
+}
+
+export function PlayIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden className={className}>
+      <path d="M6.5 4.2v11.6a.6.6 0 0 0 .92.5l9.06-5.8a.6.6 0 0 0 0-1L7.42 3.7a.6.6 0 0 0-.92.5Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function BrandLockup({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-3 ${className}`}>

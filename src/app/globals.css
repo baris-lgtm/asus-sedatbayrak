@@ -19,8 +19,17 @@
   --color-warn: #8a5a00;
   --color-err: #c3141c;
 
+  /* Landing (ProArt Design Futures): gece zemini, krem bölümler, bakır vurgu */
+  --color-night: #0d0c0b;
+  --color-night-2: #151311;
+  --color-cream: #efe9e0;
+  --color-copper: #c8955f;
+  --color-copper-ink: #8f6130;
+  --color-fog: #a9a298;
+
   --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+  --font-headline: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
@@ -162,6 +171,105 @@
     background: var(--color-blue);
     border-color: var(--color-blue);
     color: #fff;
+  }
+
+  /* ——— Landing ——— */
+  .headline {
+    font-family: var(--font-headline);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.04;
+  }
+  /* Bakır üst başlık + ardından ince çizgi */
+  .eyebrow-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-copper);
+  }
+  .eyebrow-line::after {
+    content: "";
+    width: 3.5rem;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.8;
+  }
+
+  .field-dark {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #fff;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9375rem;
+    appearance: none;
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  .field-dark::placeholder {
+    color: rgba(255, 255, 255, 0.38);
+  }
+  .field-dark:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+  .field-dark:focus {
+    outline: none;
+    border-color: var(--color-copper);
+    box-shadow: 0 0 0 3px rgba(200, 149, 95, 0.2);
+  }
+  .field-dark[aria-invalid="true"] {
+    border-color: #ff8d84;
+  }
+  .field-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='m4 6 4 4 4-4' stroke='%23ffffff' stroke-opacity='.7' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.25rem;
+  }
+  .field-select option {
+    color: #111;
+  }
+  .field-select:has(option[value=""]:checked) {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .btn-copper,
+  .btn-ghost-light {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    min-height: 2.875rem;
+    padding: 0 1.4rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 3px;
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+  }
+  .btn-copper {
+    background: var(--color-copper);
+    color: #17120c;
+  }
+  .btn-copper:hover {
+    background: #d8a674;
+  }
+  .btn-copper:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .btn-ghost-light {
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    color: #fff;
+  }
+  .btn-ghost-light:hover {
+    background: #fff;
+    color: var(--color-night);
   }
 
   /* Ok simgesi butona/karta hover'da hafifçe kayar */

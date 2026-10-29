@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   applicationSchema,
   MOTIVATION_MAX,
+  TOOLS_MAX,
   type ApplicationData,
   type ApplicationInput,
   type FieldErrors,
@@ -21,32 +22,42 @@ type Phase =
   | { kind: "success" }
   | { kind: "error"; message: string; retryable: boolean };
 
+/** Koyu zeminli başvuru formu (landing). */
 function Field({
   label,
+  required,
   hint,
   error,
   children,
   id,
+  className = "",
 }: {
   label: string;
+  required?: boolean;
   hint?: string;
   error?: string;
   id: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div>
-      <label htmlFor={id} className="mb-1.5 block text-[13px] font-medium text-ink/80">
+    <div className={className}>
+      <label htmlFor={id} className="mb-1.5 block text-[13px] text-white/85">
         {label}
+        {required && (
+          <span aria-hidden className="ml-0.5 text-copper">
+            *
+          </span>
+        )}
       </label>
       {children}
       {hint && !error && (
-        <p id={`${id}-hint`} className="mt-1.5 text-xs text-graphite">
+        <p id={`${id}-hint`} className="mt-1.5 text-xs text-fog">
           {hint}
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-err">
+        <p id={`${id}-error`} className="mt-1.5 text-xs font-medium text-[#ff8d84]">
           {error}
         </p>
       )}
@@ -58,13 +69,26 @@ function describedBy(id: string, error?: string, hint?: string) {
   return error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 }
 
+export interface FormCopy {
+  fullName: string;
+  email: string;
+  phone: string;
+  participantType: string;
+  institution: string;
+  tools: string;
+  toolsPlaceholder: string;
+  motivation: string;
+  motivationPlaceholder: string;
+  note: string;
+}
+
 export function ApplicationForm({
   kvkkApproved,
-  additionalQuestion,
+  copy,
   turnstileSiteKey,
 }: {
   kvkkApproved: boolean;
-  additionalQuestion: { id: string; label: string; maxLength: number } | null;
+  copy: FormCopy;
   turnstileSiteKey: string | null;
 }) {
   const uid = useId();
@@ -92,7 +116,7 @@ export function ApplicationForm({
   const onSubmit = async (data: ApplicationData) => {
     setPhase({ kind: "idle" });
     if (turnstileSiteKey && !turnstileToken) {
-      setPhase({ kind: "error", message: "Güvenlik doğrulamasının tamamlanmasını bekle ve tekrar dene.", retryable: true });
+      setPhase({ kind: "error", message: "Güvenlik doğrulamasının tamamlanmasını bekleyip tekrar deneyin.", retryable: true });
       return;
     }
     let res: Response;
@@ -100,12 +124,24 @@ export function ApplicationForm({
       res = await fetch("/api/applications", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...data, turnstileToken }),
+        body: JSON.stringify({
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone,
+          participantType: data.participantType,
+          institution: data.institution,
+          tools: data.tools,
+          motivation: data.motivation,
+          kvkkAcknowledged: data.kvkkAcknowledged,
+          marketingConsent: data.marketingConsent,
+          website: data.website,
+          turnstileToken,
+        }),
       });
     } catch {
       setPhase({
         kind: "error",
-        message: "Bağlantı kurulamadı. İnternet bağlantını kontrol edip tekrar gönder; girdiğin bilgiler korunuyor.",
+        message: "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar gönderin; girdiğiniz bilgiler korunuyor.",
         retryable: true,
       });
       track("application_error", { reason: "network" });
@@ -126,7 +162,7 @@ export function ApplicationForm({
     }
     setPhase({
       kind: "error",
-      message: body.message || "Başvurun gönderilemedi. Lütfen tekrar dene.",
+      message: body.message || "Başvurunuz gönderilemedi. Lütfen tekrar deneyin.",
       retryable: !["duplicate", "closed"].includes(body.code ?? ""),
     });
     track("application_error", { reason: body.code ?? String(res.status) });
@@ -134,29 +170,28 @@ export function ApplicationForm({
 
   if (phase.kind === "success") {
     return (
-      <div ref={successRef} tabIndex={-1} role="status" className="rounded-[3px] border border-rule bg-surface p-8 outline-none sm:p-10">
-        <div className="mb-6 h-px w-14 bg-blue" aria-hidden />
-        <h3 className="display text-4xl">Başvurun başarıyla alındı.</h3>
-        <p className="mt-4 max-w-xl leading-relaxed text-graphite">
-          Başvurun ekip tarafından incelendikten sonra sonucunu e-posta yoluyla öğreneceksin.
+      <div ref={successRef} tabIndex={-1} role="status" className="rounded-[4px] border border-white/12 bg-white/[0.03] p-8 outline-none sm:p-10">
+        <div className="mb-6 h-px w-14 bg-copper" aria-hidden />
+        <h3 className="headline text-3xl text-white">Başvurunuz başarıyla alındı.</h3>
+        <p className="mt-4 max-w-xl leading-relaxed text-fog">
+          Başvurunuz ekip tarafından değerlendirildikten sonra sonucu e-posta ile bildirilecek.
         </p>
-        <p className="mt-6 max-w-xl rounded-[3px] border border-rule bg-surface px-4 py-3 text-sm font-medium leading-relaxed">
-          Bu ekran başvurunun kabul edildiği anlamına gelmez. Katılımın yalnızca onay e-postası ve QR kodlu davetiye ile
-          kesinleşir.
+        <p className="mt-6 max-w-xl rounded-[4px] border border-white/12 px-4 py-3 text-sm leading-relaxed text-white/90">
+          Bu ekran başvurunuzun kabul edildiği anlamına gelmez. Katılımınız yalnızca onay e-postası ve QR kodlu davetiye
+          ile kesinleşir.
         </p>
       </div>
     );
   }
 
   const ids = {
-    firstName: `${uid}-ad`,
-    lastName: `${uid}-soyad`,
+    fullName: `${uid}-adsoyad`,
     email: `${uid}-eposta`,
     phone: `${uid}-telefon`,
     participantType: `${uid}-durum`,
     institution: `${uid}-kurum`,
-    department: `${uid}-bolum`,
-    motivation: `${uid}-ek`,
+    tools: `${uid}-araclar`,
+    motivation: `${uid}-motivasyon`,
     kvkk: `${uid}-kvkk`,
     marketing: `${uid}-pazarlama`,
   };
@@ -171,7 +206,7 @@ export function ApplicationForm({
     return (
       <input
         id={ids[name]}
-        className="field-input"
+        className="field-dark"
         aria-invalid={err ? true : undefined}
         aria-describedby={describedBy(ids[name], err, hint)}
         {...props}
@@ -182,76 +217,73 @@ export function ApplicationForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate aria-describedby={`${uid}-zorunlu`}>
-      <p id={`${uid}-zorunlu`} className="mb-6 text-xs text-graphite">
-        Ek soru ve pazarlama izni dışındaki tüm alanlar zorunludur.
+      <p id={`${uid}-zorunlu`} className="sr-only">
+        Yıldızlı alanlar zorunludur.
       </p>
 
-      <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
-        <Field id={ids.firstName} label="Ad" error={errors.firstName?.message}>
-          {input("firstName", register("firstName"), { autoComplete: "given-name", maxLength: 80 })}
+      <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+        <Field id={ids.fullName} label={copy.fullName} required error={errors.fullName?.message}>
+          {input("fullName", register("fullName"), { autoComplete: "name", maxLength: 161, placeholder: "Adınız ve soyadınız" })}
         </Field>
-        <Field id={ids.lastName} label="Soyad" error={errors.lastName?.message}>
-          {input("lastName", register("lastName"), { autoComplete: "family-name", maxLength: 80 })}
+        <Field id={ids.email} label={copy.email} required error={errors.email?.message}>
+          {input("email", register("email"), {
+            type: "email",
+            autoComplete: "email",
+            inputMode: "email",
+            maxLength: 254,
+            placeholder: "ornek@eposta.com",
+          })}
         </Field>
-        <Field id={ids.email} label="E-posta" error={errors.email?.message} hint="Başvuru sonucun ve davetiyen bu adrese gönderilir.">
-          {input(
-            "email",
-            register("email"),
-            { type: "email", autoComplete: "email", inputMode: "email", maxLength: 254 },
-            "Başvuru sonucun ve davetiyen bu adrese gönderilir.",
-          )}
+        <Field id={ids.phone} label={copy.phone} required error={errors.phone?.message}>
+          {input("phone", register("phone"), {
+            type: "tel",
+            autoComplete: "tel",
+            inputMode: "tel",
+            maxLength: 20,
+            placeholder: "05XX XXX XX XX",
+          })}
         </Field>
-        <Field id={ids.phone} label="Telefon" error={errors.phone?.message} hint="Ör. 0555 111 22 33">
-          {input("phone", register("phone"), { type: "tel", autoComplete: "tel", inputMode: "tel", maxLength: 20 }, "Ör. 0555 111 22 33")}
-        </Field>
-
-        <fieldset className="sm:col-span-2" aria-describedby={errors.participantType ? `${ids.participantType}-error` : undefined}>
-          <legend className="text-[13px] font-medium text-ink/80">Meslek veya öğrenci durumu</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <Field id={ids.participantType} label={copy.participantType} required error={errors.participantType?.message}>
+          <select
+            id={ids.participantType}
+            className="field-dark field-select"
+            defaultValue=""
+            aria-invalid={errors.participantType ? true : undefined}
+            aria-describedby={describedBy(ids.participantType, errors.participantType?.message)}
+            {...register("participantType")}
+          >
+            <option value="" disabled>
+              Seçiniz
+            </option>
             {PARTICIPANT_TYPES.map((t) => (
-              <label key={t} className="cursor-pointer">
-                <input type="radio" value={t} className="peer sr-only" {...register("participantType")} />
-                <span className="inline-flex min-h-11 items-center rounded-[6px] border border-rule bg-surface px-4 text-sm transition-colors hover:border-[#cbc4b8] peer-checked:border-blue peer-checked:bg-blue peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-blue">
-                  {PARTICIPANT_LABELS[t]}
-                </span>
-              </label>
+              <option key={t} value={t}>
+                {PARTICIPANT_LABELS[t]}
+              </option>
             ))}
-          </div>
-          {errors.participantType && (
-            <p id={`${ids.participantType}-error`} className="mt-1.5 text-xs font-medium text-err">
-              {errors.participantType.message}
-            </p>
-          )}
-        </fieldset>
-
-        <Field id={ids.institution} label="Kurum / üniversite" error={errors.institution?.message} hint="Serbest çalışıyorsan “Serbest” yazabilirsin.">
-          {input("institution", register("institution"), { autoComplete: "organization", maxLength: 160 }, "Serbest çalışıyorsan “Serbest” yazabilirsin.")}
+          </select>
         </Field>
-        <Field id={ids.department} label="Bölüm / uzmanlık alanı" error={errors.department?.message}>
-          {input("department", register("department"), { maxLength: 160 })}
+        <Field id={ids.institution} label={copy.institution} required error={errors.institution?.message}>
+          {input("institution", register("institution"), {
+            autoComplete: "organization",
+            maxLength: 160,
+            placeholder: "Kurum veya okul adınız",
+          })}
         </Field>
-
-        {additionalQuestion && (
-          <div className="sm:col-span-2">
-            <label htmlFor={ids.motivation} className="mb-1.5 block text-[13px] font-medium text-ink/80">
-              {additionalQuestion.label}
-            </label>
-            <textarea
-              id={ids.motivation}
-              rows={4}
-              maxLength={MOTIVATION_MAX}
-              className="field-input resize-y"
-              aria-invalid={errors.motivation ? true : undefined}
-              aria-describedby={errors.motivation ? `${ids.motivation}-error` : undefined}
-              {...register("motivation")}
-            />
-            {errors.motivation && (
-              <p id={`${ids.motivation}-error`} className="mt-1.5 text-xs font-medium text-err">
-                {errors.motivation.message}
-              </p>
-            )}
-          </div>
-        )}
+        <Field id={ids.tools} label={copy.tools} error={errors.tools?.message}>
+          {input("tools", register("tools"), { maxLength: TOOLS_MAX, placeholder: copy.toolsPlaceholder })}
+        </Field>
+        <Field id={ids.motivation} label={copy.motivation} required error={errors.motivation?.message} className="sm:col-span-2">
+          <textarea
+            id={ids.motivation}
+            rows={4}
+            maxLength={MOTIVATION_MAX}
+            placeholder={copy.motivationPlaceholder}
+            className="field-dark resize-y"
+            aria-invalid={errors.motivation ? true : undefined}
+            aria-describedby={describedBy(ids.motivation, errors.motivation?.message)}
+            {...register("motivation")}
+          />
+        </Field>
       </div>
 
       {/* Honeypot — ekran okuyuculardan ve klavyeden gizli */}
@@ -262,44 +294,42 @@ export function ApplicationForm({
         </label>
       </div>
 
-      <div className="mt-8 space-y-4 border-t border-rule pt-6 text-sm">
+      <div className="mt-6 space-y-3.5 text-[13px] leading-relaxed text-white/85">
         {!kvkkApproved && (
-          <p className="rounded-[3px] border border-dashed border-warn/60 bg-amber-50/60 px-4 py-3 text-xs leading-relaxed text-warn">
+          <p className="rounded-[4px] border border-dashed border-copper/50 px-4 py-3 text-xs text-copper">
             Taslak: KVKK aydınlatma ve açık rıza metinleri hukuki onay sürecindedir; canlıya almadan önce onaylı metinlerle
             değiştirilmelidir.
           </p>
         )}
-
         <div>
           <label className="flex cursor-pointer items-start gap-3">
             <input
               id={ids.kvkk}
               type="checkbox"
-              className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-blue"
+              className="mt-0.5 h-4 w-4 shrink-0 accent-copper"
               aria-invalid={errors.kvkkAcknowledged ? true : undefined}
               aria-describedby={errors.kvkkAcknowledged ? `${ids.kvkk}-error` : undefined}
               {...register("kvkkAcknowledged")}
             />
-            <span className="leading-relaxed">
-              <Link href="/kvkk" target="_blank" className="font-medium text-blue underline underline-offset-4">
+            <span>
+              <Link href="/kvkk" target="_blank" className="text-copper underline underline-offset-4">
                 KVKK aydınlatma metnini
               </Link>{" "}
               okudum; başvurumun değerlendirilmesi için kişisel verilerimin bu metin kapsamında işleneceği konusunda
-              bilgilendirildim. <span className="text-graphite">(Zorunlu)</span>
+              bilgilendirildim. <span className="text-fog">(Zorunlu)</span>
             </span>
           </label>
           {errors.kvkkAcknowledged && (
-            <p id={`${ids.kvkk}-error`} className="mt-1.5 pl-[30px] text-xs font-medium text-err">
+            <p id={`${ids.kvkk}-error`} className="mt-1.5 pl-7 text-xs font-medium text-[#ff8d84]">
               {errors.kvkkAcknowledged.message}
             </p>
           )}
         </div>
-
         <label className="flex cursor-pointer items-start gap-3">
-          <input id={ids.marketing} type="checkbox" className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-blue" {...register("marketingConsent")} />
-          <span className="leading-relaxed">
+          <input id={ids.marketing} type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-copper" {...register("marketingConsent")} />
+          <span>
             ASUS&apos;un etkinlik, ürün ve kampanyalarıyla ilgili bana e-posta ve SMS ile ticari ileti göndermesine izin
-            veriyorum. <span className="text-graphite">(İsteğe bağlı — başvurunun değerlendirilmesini etkilemez.)</span>
+            veriyorum. <span className="text-fog">(İsteğe bağlı — başvurunun değerlendirilmesini etkilemez.)</span>
           </span>
         </label>
       </div>
@@ -311,24 +341,18 @@ export function ApplicationForm({
       )}
 
       {phase.kind === "error" && (
-        <div ref={errorRef} tabIndex={-1} role="alert" className="mt-6 rounded-[3px] border border-err/30 bg-red-50 px-4 py-3 outline-none">
-          <p className="text-sm font-medium text-err">{phase.message}</p>
+        <div ref={errorRef} tabIndex={-1} role="alert" className="mt-6 rounded-[4px] border border-[#ff8d84]/40 bg-[#ff8d84]/10 px-4 py-3 outline-none">
+          <p className="text-sm font-medium text-[#ffb3ad]">{phase.message}</p>
         </div>
       )}
 
-      <div className="mt-7 flex flex-wrap items-center gap-4">
-        <button type="submit" className="btn btn-primary arrow-nudge w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
-          {isSubmitting ? "Gönderiliyor…" : phase.kind === "error" && phase.retryable ? "Tekrar gönder" : "Başvuruyu gönder"}
-          {!isSubmitting && <ArrowRight />}
-        </button>
-        {isSubmitting ? (
-          <span role="status" className="text-xs text-graphite">
-            Başvurun gönderiliyor, lütfen bekle.
-          </span>
-        ) : (
-          <span className="text-xs text-graphite">Başvurular değerlendirilerek katılım onayı e-posta ile iletilecek.</span>
-        )}
-      </div>
+      <button type="submit" className="btn-copper arrow-nudge mt-7 w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+        {isSubmitting ? "Gönderiliyor…" : phase.kind === "error" && phase.retryable ? "Tekrar gönder" : "Başvuruyu gönder"}
+        {!isSubmitting && <ArrowRight />}
+      </button>
+      <p role={isSubmitting ? "status" : undefined} className="mt-3 text-xs leading-relaxed text-fog">
+        {isSubmitting ? "Başvurunuz gönderiliyor, lütfen bekleyin." : copy.note}
+      </p>
     </form>
   );
 }

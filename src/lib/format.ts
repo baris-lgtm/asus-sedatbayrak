@@ -14,6 +14,14 @@ export function formatEventDate(s: Pick<EventSettings, "starts_at" | "date_confi
   }).format(new Date(s.starts_at));
 }
 
+/** "21 Kasım 2026" — tarih kesinleşmediyse null. */
+export function formatEventDateShort(s: Pick<EventSettings, "starts_at" | "date_confirmed">): string | null {
+  if (!s.date_confirmed || !s.starts_at) return null;
+  return new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, day: "numeric", month: "long", year: "numeric" }).format(
+    new Date(s.starts_at),
+  );
+}
+
 /** "12.00 – 17.00" — tarih kesinleşmediyse null. */
 export function formatEventTimeRange(s: Pick<EventSettings, "starts_at" | "ends_at" | "date_confirmed">): string | null {
   if (!s.date_confirmed || !s.starts_at) return null;
