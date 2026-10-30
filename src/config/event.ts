@@ -92,7 +92,7 @@ export const eventContent = {
     title: "Mimarlığın bugününü ve geleceğini birlikte konuşalım.",
     text: "Mimarlık, yapay zekâ ve 3D modelleme ekseninde gerçek profesyonel deneyimlere dayanan, ilham verici bir paylaşım ve bilgi buluşması. Tasarımın geleceğini şekillendiren araçlar, yöntemler ve yaklaşımlar üzerine uzman isimleri bir araya getiriyoruz.",
     image: {
-      src: "/images/etkinlik-hakkinda-v2.webp",
+      src: "/images/etkinlik-hakkinda-v3.webp",
       alt: "Eskiz çizgileriyle çevrili beton mimari yapı",
       placeholderLabel: "Etkinlik görseli · yatay, açık zemin",
     } satisfies ImageSlot,
