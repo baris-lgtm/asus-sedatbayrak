@@ -32,8 +32,8 @@ const photo = (name: string, file: string): ImageSlot => ({
 });
 
 export const speakers = {
-  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat-v2") },
-  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer") },
+  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat-v3") },
+  omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer-v3") },
   fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih-v2") },
   mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut-v2") },
 } satisfies Record<string, Speaker>;
@@ -144,7 +144,8 @@ export const eventContent = {
     url: null as string | null,
     ctaLabel: "ProArt P16'yı keşfet",
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
-    video: null as string | null,
+    video: "/media/proart-p16-tanitim.mp4" as string | null,
+    videoPoster: "/images/proart-p16-video-poster.webp",
     image: {
       src: "/images/proart-p16-black.webp",
       alt: "ASUS ProArt P16 (H7607) Nano Black dizüstü bilgisayar",

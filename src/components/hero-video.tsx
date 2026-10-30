@@ -166,3 +166,111 @@ export function HeroVideo({
     </div>
   );
 }
+
+function SoundIcon({ muted, className = "h-4 w-4" }: { muted: boolean; className?: string }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden className={className}>
+      <path d="M3.5 8v4h3l4 3.5v-11L6.5 8h-3Z" fill="currentColor" />
+      {muted ? (
+        <path d="m13.5 7.5 4 5m0-5-4 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      ) : (
+        <path d="M13.5 7a4 4 0 0 1 0 6M15.5 5a7 7 0 0 1 0 10" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * Ürün tanıtım videosu: görünür olunca sessiz ve döngüde oynar, ekrandan çıkınca durur.
+ * Ses ve oynat/duraklat düğmeleri her zaman var. "Hareketi azalt" tercihinde otomatik oynamaz.
+ */
+export function ProductVideo({ src, poster, label, className = "" }: { src: string; poster: string | null; label: string; className?: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const userPaused = useRef(false);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !userPaused.current) void v.play().catch(() => undefined);
+        else if (!e.isIntersecting) v.pause();
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  const togglePlay = () => {
+    const v = ref.current;
+    if (!v) return;
+    if (v.paused) {
+      userPaused.current = false;
+      void v.play();
+    } else {
+      userPaused.current = true;
+      v.pause();
+    }
+  };
+  const toggleSound = () => {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+    if (!v.muted && v.paused) {
+      userPaused.current = false;
+      void v.play();
+    }
+  };
+
+  return (
+    <div className={`relative overflow-hidden bg-black ${className}`}>
+      <video
+        ref={ref}
+        src={src}
+        poster={poster ?? undefined}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-label={label}
+        className="h-full w-full object-cover"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      />
+      {!playing && (
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={`Videoyu oynat: ${label}`}
+          className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-sm transition-transform hover:scale-105"
+        >
+          <PlayIcon className="ml-1 h-6 w-6" />
+        </button>
+      )}
+      <div className="absolute bottom-3 right-3 flex gap-2">
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={playing ? "Videoyu duraklat" : "Videoyu oynat"}
+          className="grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white ring-1 ring-white/20 backdrop-blur-sm hover:bg-black/70"
+        >
+          {playing ? <PauseIcon /> : <PlayIcon className="ml-0.5 h-4 w-4" />}
+        </button>
+        <button
+          type="button"
+          onClick={toggleSound}
+          aria-label={muted ? "Sesi aç" : "Sesi kapat"}
+          aria-pressed={!muted}
+          className="grid h-10 w-10 place-items-center rounded-full bg-black/50 text-white ring-1 ring-white/20 backdrop-blur-sm hover:bg-black/70"
+        >
+          <SoundIcon muted={muted} />
+        </button>
+      </div>
+    </div>
+  );
+}

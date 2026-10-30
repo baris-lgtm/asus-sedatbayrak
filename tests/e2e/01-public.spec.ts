@@ -21,7 +21,12 @@ test.describe("Landing page ve başvuru formu", () => {
     const video = page.locator("section[aria-labelledby=hero-baslik] video");
     await expect(video).toHaveAttribute("src", "/media/hero-eskizden-mimariye.mp4");
     expect(await video.evaluate((v: HTMLVideoElement) => v.muted && !v.loop)).toBe(true);
-    await expect(page.getByRole("button", { name: /Videoyu (oynat|duraklat|tekrar oynat)/ })).toBeVisible();
+    await expect(page.locator("section[aria-labelledby=hero-baslik]").getByRole("button", { name: /Videoyu (oynat|duraklat|tekrar oynat)/ })).toBeVisible();
+    // Ürün videosu: sessiz başlar, döngüde; ses ve oynat düğmeleri var
+    const pv = page.locator("#proart video");
+    await expect(pv).toHaveAttribute("src", "/media/proart-p16-tanitim.mp4");
+    expect(await pv.evaluate((v: HTMLVideoElement) => v.muted && v.loop)).toBe(true);
+    await expect(page.locator("#proart").getByRole("button", { name: "Sesi aç" })).toBeVisible();
     // SSS — 6 soru
     await expect(page.locator("#sss details")).toHaveCount(6);
     // Meta: description + OG

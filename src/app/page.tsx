@@ -5,7 +5,7 @@ import { ImageSlot } from "@/components/image-slot";
 import { ApplicationForm } from "@/components/application-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { BackgroundVideo, HeroVideo } from "@/components/hero-video";
+import { BackgroundVideo, ProductVideo } from "@/components/hero-video";
 import { ArrowRight, ProgramMark } from "@/components/brand";
 
 // Etkinlik ayarları admin panelinden değişir; sayfa en geç 60 sn'de güncellenir
@@ -279,19 +279,9 @@ export default async function HomePage() {
         </section>
 
         {/* ÜRÜN */}
-        <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink lg:flex lg:min-h-[38vw] lg:items-center">
-          <div className="absolute inset-y-0 right-0 hidden w-[56%] px-[4vw] py-[4vw] lg:block">
-            <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="50vw" className="h-full w-full" />
-          </div>
-          <ImageSlot
-            slot={product.image}
-            rounded={false}
-            fit="contain"
-            sizes="(min-width: 640px) 80vw, 100vw"
-            className="mx-auto mt-12 aspect-[16/11] w-[90%] sm:w-[78%] lg:hidden"
-          />
-          <div className="relative mx-auto w-full max-w-7xl px-5 pb-16 pt-6 sm:px-8 sm:pb-20 lg:py-28">
-            <div className="max-w-md sm:max-w-xl lg:max-w-md">
+        <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 md:grid-cols-12 md:gap-8 lg:py-28">
+            <div className="md:col-span-6 lg:col-span-5">
               <Eyebrow light>{product.eyebrow}</Eyebrow>
               <h2 id="urun-baslik" className="headline mt-6 text-[clamp(2.3rem,4.2vw,3.3rem)]">
                 {product.name} <span className="whitespace-nowrap">{product.model}</span>
@@ -305,15 +295,18 @@ export default async function HomePage() {
                 </a>
               )}
             </div>
-            {product.video && (
-              <HeroVideo
-                src={product.video}
-                poster={product.image}
-                caption={`${product.name} tanıtım videosu`}
-                sizes="(min-width: 1024px) 40vw, 100vw"
-                className="mt-10 aspect-video w-full max-w-md overflow-hidden rounded-[3px]"
-              />
-            )}
+            <div className="order-first md:order-none md:col-span-6 lg:col-span-6 lg:col-start-7">
+              {product.video ? (
+                <ProductVideo
+                  src={product.video}
+                  poster={product.videoPoster}
+                  label={`${product.name} ${product.model} tanıtım videosu`}
+                  className="mx-auto aspect-square w-full max-w-[34rem] rounded-[4px] shadow-[0_40px_80px_-40px_rgba(23,18,12,0.55)]"
+                />
+              ) : (
+                <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[16/11] w-full" />
+              )}
+            </div>
           </div>
         </section>
 
