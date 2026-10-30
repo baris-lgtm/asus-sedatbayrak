@@ -90,7 +90,7 @@ export default async function HomePage() {
       q: "Etkinlik ne zaman ve ne kadar sürecek?",
       a: dateLong
         ? `Workshop ${dateLong}${time ? `, ${time} saatleri arasında` : ""} gerçekleşecek.`
-        : `Kesin tarih ve saat duyurulduğunda bu sayfada ve davetiyenizde yer alacak. Programın ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
+        : `Workshop ${eventContent.approxDateText} tarihinde gerçekleşecek. Saat bilgisi davetiyenizde yer alacak; programın ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
     },
     {
       q: "QR kodumu kaybedersem ne yapmalıyım?",
@@ -140,7 +140,6 @@ export default async function HomePage() {
                   <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
                   <p className="mt-1.5 text-[13px] text-white/70">
                     {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
-                    {!dateShort && " · Kesin tarih yakında açıklanacak"}
                   </p>
                 </div>
                 <a href="#basvuru" className="btn-ghost-light arrow-nudge w-full sm:w-auto lg:mt-8">
@@ -289,10 +288,19 @@ export default async function HomePage() {
               <p className="mt-4 text-lg leading-snug">{product.tagline}</p>
               <p className="mt-5 text-[15px] leading-[1.7] text-graphite">{product.text}</p>
               {product.url && (
-                <a href={product.url} target="_blank" rel="noopener noreferrer" className="btn-copper arrow-nudge mt-8">
-                  {product.ctaLabel}
-                  <ArrowRight />
-                </a>
+                <div className="mt-8 border-t border-ink/12 pt-6">
+                  <p className="text-sm text-graphite">{product.ctaLead}</p>
+                  <a
+                    href={product.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-copper arrow-nudge mt-3"
+                  >
+                    {product.ctaLabel}
+                    <ArrowRight />
+                    <span className="sr-only">(yeni sekmede ASUS sitesinde açılır)</span>
+                  </a>
+                </div>
               )}
             </div>
             <div className="order-first md:order-none md:col-span-7 lg:col-span-8">

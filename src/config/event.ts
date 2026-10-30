@@ -51,7 +51,7 @@ export const eventContent = {
   approxDurationText: "Yaklaşık 4–5 saat",
   approxEndText: "17.00 civarı",
   /** Tarih kesinleşmeden (admin panelinde "kesinleşti" işaretlenmeden) önce gösterilen metin. */
-  approxDateText: "Kasım 2026",
+  approxDateText: "21 Kasım 2026",
   cityHint: "İstanbul" as string | null,
 
   /** Alt marka kilidi: "ProArt | DESIGN FUTURES" */
@@ -141,8 +141,9 @@ export const eventContent = {
     tagline: "Yaratıcı üretim ve 3D iş akışları için tasarlanan profesyonel bir deneyim.",
     text: "ProArt P16, mimarlık, 3D modelleme ve yaratıcı üretim süreçlerinde ihtiyaç duyulan esneklik ve güvenilirliği sunar. Fikirlerinizi gerçeğe dönüştürürken, hayal gücünüzün temposuna uyum sağlar.",
     /** Resmî ürün sayfası. null → "ProArt P16'yı keşfet" düğmesi gösterilmez. */
-    url: null as string | null,
-    ctaLabel: "ProArt P16'yı keşfet",
+    url: "https://www.asus.com/tr/laptops/for-creators/proart/proart-p16-h7607/" as string | null,
+    ctaLead: "Daha fazlasını keşfetmek için",
+    ctaLabel: "ProArt P16 ürün sayfası",
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
     /** ASUS resmî senaryo videosu (30 sn, 16:9, TR) — 720p H.264'e çevrildi. */
     video: "/media/proart-p16-senaryo-720.mp4" as string | null,

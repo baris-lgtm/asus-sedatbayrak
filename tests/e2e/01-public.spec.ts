@@ -14,8 +14,9 @@ test.describe("Landing page ve başvuru formu", () => {
     // Program: 3 oturum, konuşmacılar
     await expect(page.locator("#program ol > li")).toHaveCount(3);
     await expect(page.locator("#konusmacilar li")).toHaveCount(4);
-    // Ürün bağlantısı tanımlanmadıkça düğme gösterilmez
-    await expect(page.getByRole("link", { name: /ProArt P16'yı keşfet/ })).toHaveCount(0);
+    // Ürün bağlantısı ASUS Türkiye ürün sayfasına gider; tarih açılışta görünür
+    await expect(page.getByRole("link", { name: /ProArt P16 ürün sayfası/ })).toHaveAttribute("href", "https://www.asus.com/tr/laptops/for-creators/proart/proart-p16-h7607/");
+    await expect(page.getByText("21 Kasım 2026").first()).toBeVisible();
     // Görseller yerinde; açılış videosu sessiz, döngüsüz ve duraklatılabilir
     await expect(page.locator("#konusmacilar img")).toHaveCount(4);
     const video = page.locator("section[aria-labelledby=hero-baslik] video");
