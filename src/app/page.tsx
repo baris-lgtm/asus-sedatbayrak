@@ -174,7 +174,7 @@ export default async function HomePage() {
 
         {/* PROGRAM */}
         <section id="program" aria-labelledby="program-baslik" className="scroll-mt-16">
-          <div className="mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-8 sm:pt-20 lg:pt-24">
+          <div className="mx-auto max-w-7xl px-5 pb-8 pt-10 sm:px-8 sm:pt-12 lg:pb-10 lg:pt-14">
             <Eyebrow>{sessions.eyebrow}</Eyebrow>
             <h2 id="program-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
               {sessions.title}
