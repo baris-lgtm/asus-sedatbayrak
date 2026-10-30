@@ -144,8 +144,9 @@ export const eventContent = {
     url: null as string | null,
     ctaLabel: "ProArt P16'yı keşfet",
     /** Ürün tanıtım videosu (public/ altındaki MP4). null → video alanı gösterilmez. */
-    video: "/media/proart-p16-tanitim.mp4" as string | null,
-    videoPoster: "/images/proart-p16-video-poster.webp",
+    /** ASUS resmî senaryo videosu (30 sn, 16:9, TR) — 720p H.264'e çevrildi. */
+    video: "/media/proart-p16-senaryo-720.mp4" as string | null,
+    videoPoster: "/images/proart-p16-senaryo-poster.webp",
     image: {
       src: "/images/proart-p16-black.webp",
       alt: "ASUS ProArt P16 (H7607) Nano Black dizüstü bilgisayar",

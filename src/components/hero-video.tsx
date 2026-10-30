@@ -199,7 +199,8 @@ export function ProductVideo({ src, poster, label, className = "" }: { src: stri
         if (e.isIntersecting && !userPaused.current) void v.play().catch(() => undefined);
         else if (!e.isIntersecting) v.pause();
       },
-      { threshold: 0.35 },
+      // Görünüme ~300px kala yüklenip oynamaya başlar → kullanıcı vardığında akıyor olur
+      { rootMargin: "300px 0px", threshold: 0 },
     );
     io.observe(v);
     return () => io.disconnect();

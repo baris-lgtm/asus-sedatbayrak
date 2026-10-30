@@ -24,7 +24,7 @@ test.describe("Landing page ve başvuru formu", () => {
     await expect(page.locator("section[aria-labelledby=hero-baslik]").getByRole("button", { name: /Videoyu (oynat|duraklat|tekrar oynat)/ })).toBeVisible();
     // Ürün videosu: sessiz başlar, döngüde; ses ve oynat düğmeleri var
     const pv = page.locator("#proart video");
-    await expect(pv).toHaveAttribute("src", "/media/proart-p16-tanitim.mp4");
+    await expect(pv).toHaveAttribute("src", "/media/proart-p16-senaryo-720.mp4");
     expect(await pv.evaluate((v: HTMLVideoElement) => v.muted && v.loop)).toBe(true);
     await expect(page.locator("#proart").getByRole("button", { name: "Sesi aç" })).toBeVisible();
     // SSS — 6 soru

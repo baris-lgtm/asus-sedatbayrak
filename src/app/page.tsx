@@ -281,7 +281,7 @@ export default async function HomePage() {
         {/* ÜRÜN */}
         <section id="proart" aria-labelledby="urun-baslik" className="relative scroll-mt-16 overflow-hidden border-t border-ink/10 bg-cream text-ink">
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 sm:px-8 sm:py-20 md:grid-cols-12 md:gap-8 lg:py-28">
-            <div className="md:col-span-6 lg:col-span-5">
+            <div className="md:col-span-5 lg:col-span-4">
               <Eyebrow light>{product.eyebrow}</Eyebrow>
               <h2 id="urun-baslik" className="headline mt-6 text-[clamp(2.3rem,4.2vw,3.3rem)]">
                 {product.name} <span className="whitespace-nowrap">{product.model}</span>
@@ -295,13 +295,13 @@ export default async function HomePage() {
                 </a>
               )}
             </div>
-            <div className="order-first md:order-none md:col-span-6 lg:col-span-6 lg:col-start-7">
+            <div className="order-first md:order-none md:col-span-7 lg:col-span-8">
               {product.video ? (
                 <ProductVideo
                   src={product.video}
                   poster={product.videoPoster}
                   label={`${product.name} ${product.model} tanıtım videosu`}
-                  className="mx-auto aspect-square w-full max-w-[34rem] rounded-[4px] shadow-[0_40px_80px_-40px_rgba(23,18,12,0.55)]"
+                  className="aspect-video w-full rounded-[4px] shadow-[0_40px_80px_-40px_rgba(23,18,12,0.55)]"
                 />
               ) : (
                 <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="(min-width: 768px) 50vw, 100vw" className="aspect-[16/11] w-full" />
