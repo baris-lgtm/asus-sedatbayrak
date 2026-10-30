@@ -6,7 +6,7 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.goto("/");
     await expect(page).toHaveTitle(/ASUS × Sedat Bayrak Workshop/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Mimarlığın");
-    for (const h of ["Mimarlığın bugününü ve geleceğini birlikte konuşalım.", "Önerilen oturum temaları", "Alanında uzman isimlerle ilham verici bir buluşma.", "ProArt P16 (H7607)", "Katılım için başvurun.", "Merak edilenler."]) {
+    for (const h of ["Mimarlığın bugününü ve geleceğini birlikte konuşalım.", "Üç oturum, üç bakış açısı", "Alanında uzman isimlerle ilham verici bir buluşma.", "ProArt P16 (H7607)", "Katılım için başvurun.", "Merak edilenler."]) {
       await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
     }
     // Kesinleşmemiş bilgi gerçekmiş gibi gösterilmiyor

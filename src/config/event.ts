@@ -32,7 +32,7 @@ const photo = (name: string, file: string): ImageSlot => ({
 });
 
 export const speakers = {
-  sedat: { name: "Sedat Bayrak", role: "Mimar", note: "Sohbet yürütücüsü", photo: photo("Sedat Bayrak", "sedat-v3") },
+  sedat: { name: "Sedat Bayrak", role: "Mimar", photo: photo("Sedat Bayrak", "sedat-v3") },
   omer: { name: "Ömer Selçuk Baz", role: "Mimar", photo: photo("Ömer Selçuk Baz", "omer-v3") },
   fatih: { name: "Fatih Çilingir", role: "3D Görselleştirme Uzmanı", photo: photo("Fatih Çilingir", "fatih-v2") },
   mesut: { name: "Mesut Çevik", role: "Teknoloji İçerik Üreticisi", note: "ProArt Sunumu", photo: photo("Mesut Çevik", "mesut-v2") },
@@ -100,8 +100,8 @@ export const eventContent = {
 
   sessions: {
     eyebrow: "Program",
-    title: "Önerilen oturum temaları",
-    subtitle: "Mimarlık, teknoloji ve yaratıcı üretim ekseninde üç farklı bakış açısı.",
+    title: "Üç oturum, üç bakış açısı",
+    subtitle: "Mimarlık, yapay zekâ ve yaratıcı üretim üzerine uzman isimlerle bir gün.",
     items: [
       {
         title: "Mimari görselleştirmede yapay zekâ",
