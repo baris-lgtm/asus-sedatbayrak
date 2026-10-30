@@ -85,7 +85,7 @@ export function BackgroundVideo({
           alt=""
           fill
           sizes={sizes}
-          className={`object-cover object-right transition-opacity duration-700 ${mode === "poster" ? "opacity-100" : "opacity-0"}`}
+          className={`object-cover object-[66%_50%] transition-opacity lg:object-right duration-700 ${mode === "poster" ? "opacity-100" : "opacity-0"}`}
         />
       )}
       <video
@@ -96,15 +96,15 @@ export function BackgroundVideo({
         preload="auto"
         aria-hidden
         tabIndex={-1}
-        className={`absolute inset-0 h-full w-full object-cover object-right transition-opacity duration-700 ${mode === "video" ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 h-full w-full object-cover object-[66%_50%] transition-opacity lg:object-right duration-700 ${mode === "video" ? "opacity-100" : "opacity-0"}`}
         onPlay={() => setState("playing")}
         onPause={() => setState((s) => (s === "ended" ? s : "paused"))}
         onEnded={() => setState("ended")}
         onError={() => setMode("poster")}
       />
       <span className="sr-only">{poster.alt}</span>
-      <div className="absolute bottom-5 right-5 flex items-center gap-4 sm:bottom-7 sm:right-8">
-        {caption && <p className="hidden max-w-[15rem] text-right text-xs leading-snug text-white/80 sm:block">{caption}</p>}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-4 sm:right-8 sm:top-6 lg:bottom-7 lg:top-auto">
+        {caption && <p className="hidden max-w-[15rem] text-right text-xs leading-snug text-white/80 lg:block">{caption}</p>}
         <button
           type="button"
           onClick={toggle}

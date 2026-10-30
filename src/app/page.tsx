@@ -24,16 +24,16 @@ function Eyebrow({ children, light = false }: { children: React.ReactNode; light
 
 function SpeakerCard({ s, size = "sm", light = false }: { s: Speaker; size?: "sm" | "lg"; light?: boolean }) {
   return (
-    <figure className={size === "sm" ? "w-[8.5rem] shrink-0" : ""}>
+    <figure className={size === "sm" ? "w-full lg:w-[8.5rem] lg:shrink-0" : ""}>
       <ImageSlot
         slot={s.photo}
         dark={!light}
-        sizes={size === "sm" ? "136px" : "(min-width: 1024px) 22vw, 45vw"}
+        sizes={size === "sm" ? "(min-width: 1024px) 136px, 45vw" : "(min-width: 1024px) 22vw, 45vw"}
         className={`${size === "sm" ? "aspect-square" : "aspect-[5/4]"} w-full grayscale contrast-[1.06] brightness-[0.9] transition-[filter] duration-500 hover:brightness-100`}
       />
       <figcaption className="mt-3">
-        <span className={`block font-medium ${size === "sm" ? "text-[13px]" : "text-base"}`}>{s.name}</span>
-        <span className={`block ${size === "sm" ? "text-[11px]" : "text-[13px]"} ${light ? "text-copper-ink" : "text-fog"}`}>
+        <span className={`block font-medium ${size === "sm" ? "text-sm lg:text-[13px]" : "text-[15px] sm:text-base"}`}>{s.name}</span>
+        <span className={`block ${size === "sm" ? "text-xs lg:text-[11px]" : "text-[13px]"} ${light ? "text-copper-ink" : "text-fog"}`}>
           {s.role}
         </span>
         {size === "lg" && s.note && <span className="block text-[13px] text-graphite">{s.note}</span>}
@@ -105,33 +105,8 @@ export default async function HomePage() {
       <main id="icerik">
         {/* HERO */}
         <section aria-labelledby="hero-baslik" className="relative overflow-hidden lg:min-h-[640px]">
-          <div className="pointer-events-none relative z-10 mx-auto max-w-7xl px-4 pb-12 pt-12 sm:px-8 lg:pb-28 lg:pt-16">
-            <div className="pointer-events-auto max-w-md">
-              <ProgramMark className="rise text-[17px]" />
-              <div aria-hidden className="mt-7 h-px w-full max-w-[22rem] bg-white/20" />
-              <h1 id="hero-baslik" className="headline rise rise-1 mt-8 text-[clamp(3.2rem,7vw,5.4rem)] leading-[0.98]">
-                <span className="block">{hero.title[0]}</span>
-                <span className="block text-copper">{hero.title[1]}</span>
-              </h1>
-              <p className="rise rise-2 mt-7 max-w-sm text-[15px] leading-relaxed text-white/80">{eventContent.tagline}</p>
-              <div aria-hidden className="mt-9 h-px w-full max-w-[22rem] bg-white/20" />
-
-              <div className="rise rise-3 mt-7">
-                <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
-                <p className="mt-1.5 text-[13px] text-fog">
-                  {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
-                  {!dateShort && " · Kesin tarih yakında açıklanacak"}
-                </p>
-              </div>
-
-              <a href="#basvuru" className="btn-ghost-light arrow-nudge rise rise-3 mt-8">
-                Katılım için başvur
-                <ArrowRight />
-              </a>
-            </div>
-          </div>
-          {/* Tek video: mobilde metnin altında 16:9, masaüstünde tüm bölümün arka planı */}
-          <div className="relative aspect-video w-full lg:absolute lg:inset-0 lg:aspect-auto">
+          {/* Video tüm ekranlarda bölümün arka planı */}
+          <div className="absolute inset-0">
             <BackgroundVideo
               src={hero.video}
               poster={hero.poster}
@@ -139,11 +114,41 @@ export default async function HomePage() {
               sizes="100vw"
               className="h-full w-full"
             />
+            {/* Masaüstü: soldan; mobil/tablet: alttan karartma (metin okunurluğu) */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,#0d0c0b_0%,rgba(13,12,11,0.92)_28%,rgba(13,12,11,0.35)_52%,transparent_70%)] lg:block"
             />
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-night/70 to-transparent" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(13,12,11,0.55)_0%,rgba(13,12,11,0.05)_22%,rgba(13,12,11,0.35)_45%,rgba(13,12,11,0.9)_68%,#0d0c0b_100%)] lg:hidden"
+            />
+          </div>
+          <div className="pointer-events-none relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[min(calc(100svh-4rem),58rem)] sm:px-8 sm:pb-14 lg:block lg:min-h-0 lg:pb-28 lg:pt-16">
+            <div className="pointer-events-auto max-w-md sm:max-w-lg lg:max-w-md">
+              <ProgramMark className="rise text-[16px] sm:text-[18px] lg:text-[17px]" />
+              <div aria-hidden className="mt-6 h-px w-full max-w-[22rem] bg-white/25 lg:mt-7" />
+              <h1 id="hero-baslik" className="headline rise rise-1 mt-6 text-[clamp(3.1rem,12vw,5.4rem)] leading-[0.98] lg:mt-8 lg:text-[clamp(3.2rem,7vw,5.4rem)]">
+                <span className="block">{hero.title[0]}</span>
+                <span className="block text-copper">{hero.title[1]}</span>
+              </h1>
+              <p className="rise rise-2 mt-5 max-w-sm text-[15px] leading-relaxed text-white/85 sm:text-base lg:mt-7 lg:text-[15px]">{eventContent.tagline}</p>
+              <div aria-hidden className="mt-7 h-px w-full max-w-[22rem] bg-white/25 lg:mt-9" />
+
+              <div className="rise rise-3 mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-6 lg:mt-7 lg:block">
+                <div>
+                  <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
+                  <p className="mt-1.5 text-[13px] text-white/70">
+                    {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
+                    {!dateShort && " · Kesin tarih yakında açıklanacak"}
+                  </p>
+                </div>
+                <a href="#basvuru" className="btn-ghost-light arrow-nudge w-full sm:w-auto lg:mt-8">
+                  Katılım için başvur
+                  <ArrowRight />
+                </a>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -152,8 +157,12 @@ export default async function HomePage() {
           <div className="absolute inset-y-0 right-0 hidden w-[52%] lg:block" style={fade("left", "45%")}>
             <ImageSlot slot={about.image} rounded={false} labelRight sizes="52vw" className="h-full w-full" />
           </div>
-          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-24">
-            <div className="max-w-[34rem]">
+          <div className="relative lg:hidden">
+            <ImageSlot slot={about.image} rounded={false} sizes="100vw" className="aspect-[4/3] w-full sm:aspect-[16/9]" />
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-cream to-transparent" />
+          </div>
+          <div className="relative mx-auto max-w-7xl px-5 pb-16 pt-6 sm:px-8 sm:pb-20 lg:py-24">
+            <div className="max-w-[34rem] sm:max-w-xl lg:max-w-[34rem]">
               <Eyebrow light>{about.eyebrow}</Eyebrow>
               <h2 id="etkinlik-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
                 {about.title}
@@ -161,12 +170,11 @@ export default async function HomePage() {
               <p className="mt-6 text-[15px] leading-[1.7] text-graphite">{about.text}</p>
             </div>
           </div>
-          <ImageSlot slot={about.image} rounded={false} sizes="100vw" className="aspect-[16/10] w-full lg:hidden" />
         </section>
 
         {/* PROGRAM */}
         <section id="program" aria-labelledby="program-baslik" className="scroll-mt-16">
-          <div className="mx-auto max-w-7xl px-4 pb-10 pt-20 sm:px-8 lg:pt-24">
+          <div className="mx-auto max-w-7xl px-5 pb-10 pt-16 sm:px-8 sm:pt-20 lg:pt-24">
             <Eyebrow>{sessions.eyebrow}</Eyebrow>
             <h2 id="program-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
               {sessions.title}
@@ -184,7 +192,7 @@ export default async function HomePage() {
                   className={`relative overflow-hidden ${light ? "bg-cream text-ink" : "border-t border-white/10 bg-night-2"}`}
                 >
                   <div
-                    className={`absolute inset-y-0 hidden w-[34%] lg:block ${light ? "left-0 py-8 pl-[3vw] pr-6" : "right-0"}`}
+                    className={`absolute inset-y-0 hidden lg:block ${light ? "left-0 w-[34%] py-8 pl-[3vw] pr-6" : "right-0 w-[26%] xl:w-[34%]"}`}
                     style={light ? undefined : fade("left", "50%")}
                   >
                     <ImageSlot
@@ -197,12 +205,22 @@ export default async function HomePage() {
                       className="h-full w-full"
                     />
                   </div>
-                  <div
-                    className={`relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-8 lg:grid-cols-12 lg:items-center lg:py-16 ${
-                      light ? "" : ""
-                    }`}
-                  >
-                    <div className={`flex gap-6 sm:gap-9 ${light ? "lg:col-span-5 lg:col-start-5" : "lg:col-span-6"}`}>
+                  {/* Mobil/tablet: oturum görseli üstte bant olarak */}
+                  <div className={`relative lg:hidden ${light ? "px-8 pt-8 sm:px-24 md:px-36" : ""}`}>
+                    <ImageSlot
+                      slot={item.image}
+                      dark={!light}
+                      rounded={false}
+                      fit={light ? "contain" : "cover"}
+                      sizes="100vw"
+                      className={light ? "aspect-[16/8] w-full" : "aspect-[16/9] w-full sm:aspect-[21/9]"}
+                    />
+                    {!light && (
+                      <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-night-2 via-night-2/40 to-transparent" />
+                    )}
+                  </div>
+                  <div className="relative mx-auto grid max-w-7xl gap-8 px-5 pb-12 pt-2 sm:px-8 sm:pb-14 md:grid-cols-12 md:items-center md:gap-6 lg:py-16">
+                    <div className={`flex gap-5 sm:gap-7 md:col-span-7 lg:gap-9 ${light ? "lg:col-span-5 lg:col-start-5" : "lg:col-span-6"}`}>
                       <span
                         aria-hidden
                         className={`headline w-[3.4rem] shrink-0 text-[clamp(3.2rem,5.4vw,4.6rem)] sm:w-[5.5rem] font-extralight leading-none ${light ? "text-copper-ink" : "text-copper"}`}
@@ -220,7 +238,11 @@ export default async function HomePage() {
                         <SpeakerNames ids={item.speakers} light={light} />
                       </div>
                     </div>
-                    <div className={`flex gap-4 ${light ? "lg:col-span-3 lg:col-start-10 lg:justify-end" : "lg:col-span-4"}`}>
+                    <div
+                      className={`grid grid-cols-2 gap-3 sm:max-w-md sm:gap-4 md:col-span-5 md:max-w-none lg:flex ${
+                        light ? "lg:col-span-3 lg:col-start-10 lg:justify-end" : "lg:col-span-4"
+                      }`}
+                    >
                       {item.speakers.map((id) => (
                         <SpeakerCard key={id} s={speakers[id]} light={light} />
                       ))}
@@ -234,7 +256,7 @@ export default async function HomePage() {
 
         {/* KONUŞMACILAR */}
         <section id="konusmacilar" aria-labelledby="konusmaci-baslik" className="scroll-mt-16 bg-cream text-ink">
-          <div className="mx-auto max-w-7xl px-4 py-20 sm:px-8 lg:py-24">
+          <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:py-24">
             <div className="grid gap-6 lg:grid-cols-12 lg:items-end">
               <div className="lg:col-span-6">
                 <Eyebrow light>{speakersSection.eyebrow}</Eyebrow>
@@ -246,7 +268,7 @@ export default async function HomePage() {
                 {speakersSection.text}
               </p>
             </div>
-            <ul className="mt-12 grid grid-cols-2 gap-x-5 gap-y-10 lg:grid-cols-4">
+            <ul className="mt-10 grid grid-cols-2 gap-x-3 gap-y-8 sm:mt-12 sm:gap-x-5 sm:gap-y-10 md:grid-cols-4 md:gap-x-4">
               {speakersSection.order.map((id) => (
                 <li key={id}>
                   <SpeakerCard s={speakers[id]} size="lg" light />
@@ -261,8 +283,15 @@ export default async function HomePage() {
           <div className="absolute inset-y-0 right-0 hidden w-[56%] px-[4vw] py-[4vw] lg:block">
             <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="50vw" className="h-full w-full" />
           </div>
-          <div className="relative mx-auto w-full max-w-7xl px-4 py-20 sm:px-8 lg:py-28">
-            <div className="max-w-md">
+          <ImageSlot
+            slot={product.image}
+            rounded={false}
+            fit="contain"
+            sizes="(min-width: 640px) 80vw, 100vw"
+            className="mx-auto mt-12 aspect-[16/11] w-[90%] sm:w-[78%] lg:hidden"
+          />
+          <div className="relative mx-auto w-full max-w-7xl px-5 pb-16 pt-6 sm:px-8 sm:pb-20 lg:py-28">
+            <div className="max-w-md sm:max-w-xl lg:max-w-md">
               <Eyebrow light>{product.eyebrow}</Eyebrow>
               <h2 id="urun-baslik" className="headline mt-6 text-[clamp(2.3rem,4.2vw,3.3rem)]">
                 {product.name} <span className="whitespace-nowrap">{product.model}</span>
@@ -286,7 +315,6 @@ export default async function HomePage() {
               />
             )}
           </div>
-          <ImageSlot slot={product.image} rounded={false} fit="contain" sizes="100vw" className="mx-auto aspect-[16/11] w-[88%] lg:hidden" />
         </section>
 
         {/* BAŞVURU */}
@@ -294,7 +322,7 @@ export default async function HomePage() {
           <div className="absolute bottom-0 left-0 hidden h-[45%] w-[34%] lg:block" style={fade("right", "60%")}>
             <ImageSlot slot={application.image} dark rounded={false} sizes="34vw" className="h-full w-full opacity-70" />
           </div>
-          <div className="relative mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-24">
+          <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:gap-12 sm:px-8 sm:py-20 lg:grid-cols-12 lg:py-24">
             <div className="lg:col-span-4">
               <Eyebrow>{application.eyebrow}</Eyebrow>
               <h2 id="basvuru-baslik" className="headline mt-6 text-[clamp(2.4rem,4.2vw,3.3rem)]">
@@ -302,7 +330,7 @@ export default async function HomePage() {
                 <br />
                 {application.title[1]}
               </h2>
-              <p className="mt-6 max-w-xs text-[15px] leading-[1.7] text-white/70">{application.text}</p>
+              <p className="mt-6 max-w-xs text-[15px] leading-[1.7] text-white/70 sm:max-w-md lg:max-w-xs">{application.text}</p>
             </div>
             <div className="lg:col-span-8">
               {settings.applications_open ? (
@@ -323,7 +351,7 @@ export default async function HomePage() {
 
         {/* SSS */}
         <section id="sss" aria-labelledby="sss-baslik" className="scroll-mt-16 bg-cream text-ink">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-8 lg:grid-cols-12 lg:py-24">
+          <div className="mx-auto grid max-w-7xl gap-8 px-5 py-16 sm:gap-10 sm:px-8 sm:py-20 lg:grid-cols-12 lg:py-24">
             <div className="lg:col-span-4">
               <Eyebrow light>Sık sorulan sorular</Eyebrow>
               <h2 id="sss-baslik" className="headline mt-6 text-[clamp(2.4rem,4.2vw,3.3rem)]">

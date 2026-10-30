@@ -10,14 +10,14 @@ export function SiteFooter() {
   const socials = eventContent.socials.filter((s) => s.url);
   return (
     <footer className="bg-night font-headline text-white">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-10 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-5 text-lg">
           <BrandMark />
           <span aria-hidden className="h-5 w-px bg-white/30" />
           <ProgramMark className="text-[13px]" />
         </div>
         <nav aria-label="Alt menü">
-          <ul className="flex flex-wrap gap-x-8 gap-y-3 text-[13px] text-white/75">
+          <ul className="grid grid-cols-2 gap-x-8 gap-y-3 text-[13px] text-white/75 sm:flex sm:flex-wrap">
             {[...NAV.slice(0, 3), { href: "/#basvuru", label: "Başvur" }].map((n) => (
               <li key={n.href}>
                 <a href={n.href} className="hover:text-white">
@@ -40,7 +40,7 @@ export function SiteFooter() {
         )}
       </div>
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-5 text-[12px] text-white/50 sm:px-8 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-5 text-[12px] text-white/50 sm:px-8 md:flex-row md:items-center md:justify-between">
           <p>© {year} {eventContent.brand}. Tüm hakları saklıdır.</p>
           <ul className="flex flex-wrap gap-x-6 gap-y-2">
             <li>
