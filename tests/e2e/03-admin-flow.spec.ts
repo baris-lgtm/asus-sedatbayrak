@@ -227,6 +227,41 @@ test("T10: e-posta sağlayıcısı hata verirse başvuru korunur, hata loglanır
 });
 
 test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
+  test("hatırlatma: onaylı katılımcılara günde bir kez, davetiye QR'ı ile gider", async ({ page }) => {
+    test.setTimeout(240_000);
+    const p1 = await seedApplication({ first_name: "Hatir" });
+    await openApplication(page, p1.id);
+    await page.getByRole("button", { name: "Onayla ve davetiye gönder" }).click();
+    await expect(page.getByText(/onaylandı/).first()).toBeVisible();
+    const waiting = await seedApplication({ first_name: "Bekleyen" }); // onaylanmadı → hatırlatma almaz
+
+    await page.goto("/admin/ayarlar");
+    await expect(page.getByRole("heading", { name: "Hatırlatma e-postası" })).toBeVisible();
+    for (let round = 0; round < 10; round++) {
+      await expect(page.getByText(/Bugünün hatırlatması/)).toBeVisible();
+      const button = page.getByRole("button", { name: /Hatırlatma gönder/ });
+      if ((await button.count()) === 0) break;
+      await button.click();
+      await expect(page.getByText(/hatırlatma gönderildi|tamamına gönderildi/)).toBeVisible({ timeout: 60_000 });
+      await page.reload();
+    }
+    await expect(page.getByRole("button", { name: /Hatırlatma gönder/ })).toHaveCount(0);
+
+    const reminders = mailsTo(p1.email, "reminder");
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0].subject).toContain("hatırlatma");
+    expect(reminders[0].text).toContain("yaklaşıyor");
+    expect(reminders[0].attachments[0]).toMatchObject({ contentId: "davetiye-qr" });
+    expect(invitationFromMail(reminders[0]).token).toBe(invitationFromMail(mailsTo(p1.email, "invitation")[0]).token);
+    expect(mailsTo(waiting.email, "reminder")).toHaveLength(0);
+
+    // Aynı gün ikinci tur yok; ertesi günün turu (farklı dedupe anahtarı) yeniden gönderilebilir
+    const { data: logs } = await service().from("email_logs").select("dedupe_key").eq("application_id", p1.id).eq("email_type", "reminder");
+    expect(logs).toHaveLength(1);
+    expect(logs![0].dedupe_key).toMatch(new RegExp(`^reminder:${p1.id}:\\d{8}$`));
+  });
+
+
   test.beforeEach(async ({ page }) => {
     page.on("dialog", (d) => d.accept());
     await uiLogin(page, USERS.admin);

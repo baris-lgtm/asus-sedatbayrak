@@ -33,7 +33,8 @@ export async function buildEmail(
       return { content: statusEmail(type, app.first_name, settings) };
     case "invitation":
     case "invitation_resend":
-    case "event_update": {
+    case "event_update":
+    case "reminder": {
       if (!invitationId) throw new Error("Davetiye kimliği eksik");
       const { qrToken, manualCode } = materialFor(invitationId, requireEnv("INVITATION_TOKEN_SECRET"));
       const url = invitationUrl(siteUrl(), qrToken);
@@ -45,7 +46,8 @@ export async function buildEmail(
           invitationUrl: url,
           manualCode: formatManualCode(manualCode),
           qrContentId: contentId,
-          mode: type === "invitation_resend" ? "resend" : type === "event_update" ? "update" : "initial",
+          mode:
+            type === "invitation_resend" ? "resend" : type === "event_update" ? "update" : type === "reminder" ? "reminder" : "initial",
         }),
         attachments: [{ filename: "davetiye-qr.png", content: await qrPng(url), contentType: "image/png", contentId }],
       };
@@ -95,6 +97,14 @@ export function sendStatusNotice(
  */
 export function sendEventUpdate(app: Recipient, invitationId: string, version: string): Promise<SendOutcome> {
   return send(app, "event_update", `event_update:${app.id}:${version}`, invitationId);
+}
+
+/**
+ * Onaylı katılımcıya hatırlatma (davetiye QR'ı dahil).
+ * dedupe: "reminder:<başvuru>:<tur>" → aynı tur (gün) için kişi başı tek e-posta.
+ */
+export function sendReminder(app: Recipient, invitationId: string, round: string): Promise<SendOutcome> {
+  return send(app, "reminder", `reminder:${app.id}:${round}`, invitationId);
 }
 
 /** Başarısız bir kaydı aynı dedupe anahtarıyla, güncel içerikle yeniden dener. */

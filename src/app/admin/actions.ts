@@ -14,8 +14,8 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { requireEnv, ConfigError } from "@/lib/env";
 import { issueInvitation } from "@/lib/server/invitation-token";
 import { describeOutcome, type SendOutcome } from "@/lib/email/send";
-import { retryLoggedEmail, sendEventUpdate, sendInvitation, sendStatusNotice } from "@/lib/email/notifications";
-import { MAX_UPDATE_ATTEMPTS, eventInfoVersion, eventUpdateTargets } from "@/lib/admin/event-update";
+import { retryLoggedEmail, sendEventUpdate, sendInvitation, sendReminder, sendStatusNotice } from "@/lib/email/notifications";
+import { MAX_UPDATE_ATTEMPTS, eventInfoVersion, eventUpdateTargets, reminderRound, reminderTargets } from "@/lib/admin/event-update";
 import { getEventSettingsStrict } from "@/lib/event-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fromIstanbulLocalInput } from "@/lib/format";
@@ -211,7 +211,7 @@ export async function retryEmailAction(_prev: ActionState, formData: FormData): 
         return { ok: false, message: "Başvurunun durumu bu e-postadan sonra değişti; eski bildirim gönderilmedi." };
       }
     }
-    if (type === "invitation" || type === "invitation_resend" || type === "event_update") {
+    if (type === "invitation" || type === "invitation_resend" || type === "event_update" || type === "reminder") {
       if (app.status !== "approved" || !log.invitation_id) {
         return { ok: false, message: "Başvuru artık onaylı değil (veya giriş yapıldı); davetiye e-postası gönderilmedi." };
       }
@@ -400,6 +400,68 @@ export async function sendEventUpdatesAction(_prev: ActionState, _formData: Form
     if (after.sendable.length > 0) parts.push(`Kalan: ${after.sendable.length}. Devam etmek için tekrar bas.`);
     else if (after.stuck > 0) parts.push(`${after.stuck} kişiye ulaşılamadı; "Başarısız e-postaları göster" ile kontrol et.`);
     else parts.push("Tüm onaylı katılımcılar bilgilendirildi.");
+    return { ok: failed === 0, message: parts.join(" ") };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+
+/**
+ * Onaylı (henüz giriş yapmamış) katılımcılara hatırlatma e-postası (davetiye QR'ı dahil).
+ * Tur = İstanbul saatiyle bugün: aynı gün kişi başı en fazla bir hatırlatma; ertesi gün tekrar gönderilebilir.
+ * Her çağrıda en fazla 20 kişi işlenir; kalan varsa admin tekrar basar.
+ */
+export async function sendRemindersAction(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  try {
+    const admin = await requireAdmin();
+    const round = reminderRound();
+    const { total, pending, sendable, stuck } = await reminderTargets(admin.supabase, round);
+    if (total === 0) return { ok: false, message: "Henüz onaylı (giriş yapmamış) katılımcı yok." };
+    if (pending.length === 0) return { ok: true, message: `Bugünün hatırlatması ${total} katılımcının tamamına gönderildi.` };
+    if (sendable.length === 0) {
+      return {
+        ok: false,
+        message: stuck
+          ? `Kalan ${stuck} kişiye ${MAX_UPDATE_ATTEMPTS} denemede de gönderilemedi. Başvurular sayfasından "Başarısız e-postaları göster" ile kontrol et.`
+          : "Gönderimler sürüyor; birkaç dakika sonra tekrar bak.",
+      };
+    }
+
+    const db = createAdminClient();
+    const batch = sendable.slice(0, UPDATE_BATCH);
+    const { data: apps, error: appsError } = await db
+      .from("applications")
+      .select("id, first_name, email")
+      .in("id", batch.map((b) => b.applicationId))
+      .returns<Pick<Application, "id" | "first_name" | "email">[]>();
+    if (appsError) return { ok: false, message: "Katılımcı bilgileri okunamadı. Tekrar dene." };
+    const byId = new Map((apps ?? []).map((a) => [a.id, a]));
+
+    let sent = 0;
+    let failed = 0;
+    for (const [i, t] of batch.entries()) {
+      const app = byId.get(t.applicationId);
+      if (!app) continue;
+      if (i > 0) await new Promise((r) => setTimeout(r, RESEND_SPACING_MS));
+      const outcome = await sendReminder(app, t.invitationId, round);
+      if (outcome.status === "sent") sent += 1;
+      else if (outcome.status !== "duplicate") failed += 1;
+    }
+
+    await db.from("admin_audit_logs").insert({
+      admin_user_id: admin.userId,
+      action: "send_reminder",
+      metadata: { round, sent, failed, remaining: pending.length - sent },
+    });
+    revalidatePath("/admin", "layout");
+
+    const after = await reminderTargets(admin.supabase, round);
+    const parts = [`${sent} katılımcıya hatırlatma gönderildi.`];
+    if (failed) parts.push(`${failed} gönderim başarısız (en fazla ${MAX_UPDATE_ATTEMPTS} kez yeniden denenir).`);
+    if (after.sendable.length > 0) parts.push(`Kalan: ${after.sendable.length}. Devam etmek için tekrar bas.`);
+    else if (after.stuck > 0) parts.push(`${after.stuck} kişiye ulaşılamadı; "Başarısız e-postaları göster" ile kontrol et.`);
+    else parts.push("Bugünün hatırlatması tüm onaylı katılımcılara gönderildi.");
     return { ok: failed === 0, message: parts.join(" ") };
   } catch (e) {
     return fail(e);

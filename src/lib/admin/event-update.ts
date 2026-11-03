@@ -34,7 +34,29 @@ export interface UpdateTarget {
 export const MAX_UPDATE_ATTEMPTS = 3;
 const SENDING_STALE_MS = 5 * 60_000;
 
-export async function eventUpdateTargets(supabase: StaffSession["supabase"], version: string) {
+/**
+ * Hatırlatma turu kimliği: İstanbul saatiyle bugünün tarihi (YYYYMMDD).
+ * Her katılımcı her gün en fazla bir hatırlatma alır; ertesi gün yeni tur açılır.
+ */
+export function reminderRound(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(now)
+    .replaceAll("-", "");
+}
+
+export function eventUpdateTargets(supabase: StaffSession["supabase"], version: string) {
+  return roundTargets(supabase, "admin_event_update_targets", { p_version: version });
+}
+
+export function reminderTargets(supabase: StaffSession["supabase"], round: string) {
+  return roundTargets(supabase, "admin_reminder_targets", { p_round: round });
+}
+
+async function roundTargets(
+  supabase: StaffSession["supabase"],
+  fn: "admin_event_update_targets" | "admin_reminder_targets",
+  args: Record<string, string>,
+) {
   // 1000 satırlık API sınırı için sayfalı okuma (400 kişide tek sayfa).
   type Row = {
     application_id: string;
@@ -46,8 +68,8 @@ export async function eventUpdateTargets(supabase: StaffSession["supabase"], ver
   };
   const rows: Row[] = [];
   for (let from = 0; from < 20_000; from += 1000) {
-    const { data, error } = await supabase.rpc("admin_event_update_targets", { p_version: version }).range(from, from + 999);
-    if (error) throw new Error(`Bilgilendirme listesi okunamadı (${error.code})`);
+    const { data, error } = await supabase.rpc(fn, args).range(from, from + 999);
+    if (error) throw new Error(`Alıcı listesi okunamadı (${error.code})`);
     const page = (data ?? []) as Row[];
     rows.push(...page);
     if (page.length < 1000) break;

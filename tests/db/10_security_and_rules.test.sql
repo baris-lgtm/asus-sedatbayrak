@@ -402,4 +402,46 @@ select tests.ok((select (r->>'by_me')::boolean and (r->>'seconds_ago')::int < 5 
                 'aynı personel tekrar okutunca by_me=true ve seconds_ago döner');
 reset role;
 
+\echo '--- 21. Hatırlatma hedefleri (gün bazlı tur, kişi başı bir e-posta)'
+set role service_role;
+select tests.apply('hatirla' || g || '@example.com') from generate_series(1, 3) g;
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select public.admin_approve((select id from public.applications where email = 'hatirla' || g || '@example.com'),
+       gen_random_uuid(), tests.h('rq' || g), tests.h('rc' || g)) from generate_series(1, 3) g;
+reset role;
+insert into public.email_logs (application_id, invitation_id, email_type, dedupe_key, status, sent_at)
+select a.id, i.id, 'reminder', 'reminder:' || a.id || ':20261120', 'sent', now()
+  from public.applications a join public.invitations i on i.application_id = a.id and i.revoked_at is null
+ where a.email = 'hatirla1@example.com';
+insert into public.email_logs (application_id, invitation_id, email_type, dedupe_key, status, attempt_count)
+select a.id, i.id, 'reminder', 'reminder:' || a.id || ':20261120', 'failed', 2
+  from public.applications a join public.invitations i on i.application_id = a.id and i.revoked_at is null
+ where a.email = 'hatirla2@example.com';
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok((select informed from public.admin_reminder_targets('20261120') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hatirla1@example.com'),
+                'bugünün hatırlatmasını alan kişi gönderildi sayılıyor');
+select tests.ok((select not informed and last_status = 'failed' and attempts = 2 from public.admin_reminder_targets('20261120') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hatirla2@example.com'),
+                'başarısız hatırlatma bekliyor ve deneme sayısı görünüyor');
+select tests.ok((select not informed from public.admin_reminder_targets('20261121') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hatirla1@example.com'),
+                'ertesi gün yeni tur: aynı kişi yeniden hatırlatılabilir');
+select tests.ok((select not informed from public.admin_reminder_targets('20261120') t
+                   join public.applications a on a.id = t.application_id where a.email = 'hatirla3@example.com'),
+                'davetiye/bilgilendirme e-postaları hatırlatma sayılmaz');
+select tests.ok((select count(*) = 0 from public.admin_reminder_targets('20261120') t
+                   join public.applications a on a.id = t.application_id where a.status <> 'approved'),
+                'yalnızca onaylı (giriş yapmamış) katılımcılar hedefte');
+select tests.expect_error($$select * from public.admin_reminder_targets('KÖTÜ; drop')$$, 'ERR_BAD_REQUEST', 'geçersiz tur reddediliyor');
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error($$select * from public.admin_reminder_targets('20261120')$$, 'ERR_FORBIDDEN', 'kapı ekibi hatırlatma listesini göremez');
+reset role;
+set role anon;
+select tests.expect_error($$select * from public.admin_reminder_targets('20261120')$$, 'permission denied|ERR_FORBIDDEN', 'anonim kullanıcı hatırlatma listesini göremez');
+reset role;
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

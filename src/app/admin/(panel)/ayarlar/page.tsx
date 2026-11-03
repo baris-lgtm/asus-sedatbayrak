@@ -4,8 +4,8 @@ import type { EventSettings } from "@/lib/types";
 import Link from "next/link";
 import { SettingsForm } from "./settings-form";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
-import { sendEventUpdatesAction } from "@/app/admin/actions";
-import { eventInfoVersion, eventUpdateTargets } from "@/lib/admin/event-update";
+import { sendEventUpdatesAction, sendRemindersAction } from "@/app/admin/actions";
+import { eventInfoVersion, eventUpdateTargets, reminderRound, reminderTargets } from "@/lib/admin/event-update";
 
 // Bu sayfadaki server action'ların azami süresi (sn). Bilgilendirme turu (20 e-posta) ~15 sn sürer; Vercel varsayılanı eski projelerde 10–15 sn olabilir.
 export const maxDuration = 60;
@@ -16,6 +16,7 @@ export default async function SettingsPage() {
   if (!data) return <p>Ayarlar okunamadı.</p>;
   const canNotify = data.date_confirmed || data.venue_confirmed;
   const progress = canNotify ? await eventUpdateTargets(supabase, eventInfoVersion(data)) : null;
+  const reminders = await reminderTargets(supabase, reminderRound());
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -69,6 +70,50 @@ export default async function SettingsPage() {
         ) : (
           <p className="text-sm font-medium">Önce tarihi veya mekânı yukarıdan kesinleşmiş olarak kaydet.</p>
         )}
+        </ActionFeedbackProvider>
+      </section>
+
+      <section aria-labelledby="hatirlatma" className="space-y-4 border-2 border-ink bg-paper p-5">
+        <h2 id="hatirlatma" className="text-lg font-bold">Hatırlatma e-postası</h2>
+        <p className="text-sm leading-relaxed text-graphite">
+          Onaylı ve henüz giriş yapmamış katılımcılara etkinlik bilgileri ve QR kodlu davetiyeleriyle birlikte hatırlatma
+          gönderir. Her gün yeni bir tur açılır: aynı gün içinde kimseye iki kez gitmez, ertesi gün tekrar gönderebilirsin
+          (ör. etkinlikten bir hafta önce ve bir gün önce).
+        </p>
+        {!data.date_confirmed && (
+          <p className="text-sm font-medium text-warn">
+            Tarih henüz kesinleşmiş olarak kaydedilmedi; e-postada tarih yerine “kesinleştiğinde bildirilecek” yazar.
+          </p>
+        )}
+        <ActionFeedbackProvider>
+          {reminders.total === 0 ? (
+            <p className="text-sm font-medium">Henüz onaylı (giriş yapmamış) katılımcı yok.</p>
+          ) : (
+            <>
+              <p className="text-sm">
+                Bugünün hatırlatması: <strong>{reminders.sent}</strong> / {reminders.total} katılımcıya gönderildi
+                {reminders.pending.length > 0 && <>, <strong>{reminders.pending.length}</strong> kişi bekliyor</>}.
+              </p>
+              {reminders.stuck > 0 && (
+                <p className="text-sm font-medium text-err">
+                  {reminders.stuck} kişiye 3 denemede de gönderilemedi.{" "}
+                  <Link href="/admin?eposta=basarisiz" className="underline underline-offset-4">Başarısız e-postaları göster</Link>
+                </p>
+              )}
+              {reminders.sendable.length > 0 && (
+                <div className="max-w-xs">
+                  <ActionForm
+                    action={sendRemindersAction}
+                    fields={{}}
+                    label="Hatırlatma gönder (20 kişilik tur)"
+                    pendingLabel="Gönderiliyor…"
+                    variant="primary"
+                    confirmText={`Bekleyen ${reminders.sendable.length} katılımcıdan ilk 20 kişiye hatırlatma e-postası gönderilsin mi?`}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </ActionFeedbackProvider>
       </section>
     </div>
