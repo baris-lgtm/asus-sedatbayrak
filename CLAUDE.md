@@ -51,7 +51,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Kamera yalnızca https (veya localhost) üzerinde çalışır.
 
 ## Kurulum kararları (20 Ekim 2026)
-- Site adresi (3 Kasım, son karar): `https://mimarliginevrimi.com` (www → apex yönlendirme) → `NEXT_PUBLIC_SITE_URL`, Supabase Auth Site URL. workshop.asus.com ve workshop.contracreative.com.tr planları iptal. Kodda sabit alan adı yok; yalnızca ortam değişkeni. Gönderici Resend'de bu domain doğrulanana kadar contracreative.com.tr üzerinden kalır.
+- Site adresi (3 Kasım, son karar): `https://www.mimarliginevrimi.com` (Vercel'de www birincil; apex 308 → www). Domain Vercel'den alındı, DNS Vercel'de. Google Workspace: marketing@mimarliginevrimi.com. Resend domaini mimarliginevrimi.com (send. CNAME + resend._domainkey) → `NEXT_PUBLIC_SITE_URL`, Supabase Auth Site URL. workshop.asus.com ve workshop.contracreative.com.tr planları iptal. Kodda sabit alan adı yok; yalnızca ortam değişkeni. Gönderici Resend'de bu domain doğrulanana kadar contracreative.com.tr üzerinden kalır.
 - Gönderici (şimdilik): `EMAIL_FROM="ASUS Mimarlığın Evrimi <baris@contracreative.com.tr>"`, `EMAIL_REPLY_TO=baris@contracreative.com.tr` (gerçek posta kutusu; katılımcı yanıtları buraya gelir). İleride workshop@ açılırsa yalnızca bu iki ortam değişkeni değişir + redeploy; kod değişmez. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
 - Planlar: Supabase Pro + Vercel Pro hemen; Resend başvurular duyurulmadan önce Pro (ücretsizde günlük 100 e-posta sınırı).
 
