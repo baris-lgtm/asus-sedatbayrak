@@ -3,7 +3,7 @@ import { createPublicClient } from "@/lib/supabase/server";
 import type { EventSettings } from "@/lib/types";
 
 export const DEFAULT_SETTINGS: EventSettings = {
-  event_name: "ASUS × Sedat Bayrak Workshop",
+  event_name: "ASUS Mimarlığın Evrimi",
   starts_at: null,
   ends_at: null,
   date_confirmed: false,

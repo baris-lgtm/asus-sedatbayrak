@@ -4,7 +4,8 @@ import { anon, mailsTo, service, uniqueEmail } from "./helpers";
 test.describe("Landing page ve başvuru formu", () => {
   test("ana sayfa tüm bölümleri gösterir ve placeholder'lar açıkça işaretli", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/ASUS × Sedat Bayrak Workshop/);
+    await expect(page).toHaveTitle("ASUS Mimarlığın Evrimi");
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute("content", /^Fikirden projeye, ekrandan şantiyeye/);
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Mimarlığın");
     for (const h of ["Mimarlığın bugününü ve geleceğini birlikte konuşalım.", "Üç oturum, üç bakış açısı", "Alanında uzman isimlerle ilham verici bir buluşma.", "ProArt P16 (H7607)", "Katılım için başvurun.", "Merak edilenler."]) {
       await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
@@ -32,7 +33,7 @@ test.describe("Landing page ve başvuru formu", () => {
     await expect(page.locator("#sss details")).toHaveCount(6);
     // Meta: description + OG
     await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", /.+/);
-    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", /Workshop/);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "ASUS Mimarlığın Evrimi");
   });
 
   test("T2: boş ve hatalı alanlar Türkçe hata mesajıyla reddedilir (istemci)", async ({ page }) => {

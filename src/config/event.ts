@@ -44,7 +44,10 @@ export const eventContent = {
   brand: "ASUS",
   artist: "Sedat Bayrak",
   /** E-postalarda ve sayfa başlığında kullanılan etkinlik adı. */
-  title: "ASUS × Sedat Bayrak Workshop",
+  title: "ASUS Mimarlığın Evrimi",
+  /** Sekme dışında paylaşım önizlemelerinde (WhatsApp, LinkedIn, Google) görünen açıklama. */
+  metaDescription:
+    "Fikirden projeye, ekrandan şantiyeye… Mimarlığın üretim süreçlerini, değişen araçlarını ve mesleğin gündemini ASUS ProArt ile birlikte konuşuyoruz.",
   tagline: "Mimarlık, 3D modelleme ve yapay zekânın yaratıcı dünyasını ASUS ProArt ile keşfedeceğiniz özel bir workshop deneyimi.",
   topics: ["Mimarlık", "3D modelleme", "Yapay zekâ", "Yaratıcı üretim"],
   /** Tahmini süre bilgisi — kesin saatler event_settings'ten gelir. */

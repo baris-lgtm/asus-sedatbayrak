@@ -30,15 +30,15 @@ export const metadata: Metadata = {
     default: eventContent.title,
     template: `%s | ${eventContent.title}`,
   },
-  description: `${eventContent.tagline} Katılım başvuru ve onay ile.`,
+  description: eventContent.metaDescription,
   openGraph: {
     type: "website",
     locale: "tr_TR",
     title: eventContent.title,
-    description: eventContent.tagline,
+    description: eventContent.metaDescription,
     siteName: eventContent.title,
   },
-  twitter: { card: "summary_large_image", title: eventContent.title, description: eventContent.tagline },
+  twitter: { card: "summary_large_image", title: eventContent.title, description: eventContent.metaDescription },
   alternates: { canonical: "/" },
 };
 

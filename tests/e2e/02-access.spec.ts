@@ -98,10 +98,13 @@ test("ekip ekleme komutu: kullanıcı oluşturur, rol verir, verilen parolayla g
 });
 
 test("paylaşım görseli ve site ikonu", async ({ request, page }) => {
-  const og = await request.get("/opengraph-image");
-  expect(og.status()).toBe(200);
-  expect(og.headers()["content-type"]).toContain("image/png");
   await page.goto("/");
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+  const ogUrl = await page.locator('meta[property="og:image"]').getAttribute("content");
+  expect(ogUrl).toMatch(/opengraph-image/);
+  const og = await request.get(new URL(ogUrl!).pathname + new URL(ogUrl!).search);
+  expect(og.status()).toBe(200);
+  expect(og.headers()["content-type"]).toContain("image/jpeg");
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute("content", "1200");
+  await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute("content", /Mimarlığın Evrimi/);
   await expect(page.locator('link[rel="icon"]').first()).toHaveAttribute("href", /icon/);
 });

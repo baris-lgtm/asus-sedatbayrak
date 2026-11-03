@@ -1,4 +1,4 @@
-# ASUS × Sedat Bayrak Workshop — Başvuru ve Katılımcı Yönetimi
+# ASUS Mimarlığın Evrimi — Başvuru ve Katılımcı Yönetimi
 
 Next.js 16 (App Router) · TypeScript · Tailwind 4 · Supabase (Postgres + Auth + RLS) · Resend · Vercel
 

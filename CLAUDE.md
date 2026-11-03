@@ -1,4 +1,4 @@
-# CLAUDE.md — ASUS × Sedat Bayrak Workshop
+# CLAUDE.md — ASUS Mimarlığın Evrimi (ProArt Design Futures)
 
 Workshop başvuru + admin onayı + QR davetiye + kapıda check-in sistemi. Kullanıcıyla **Türkçe** konuş; arayüz metinleri Türkçe ve "sen" hitabıyla.
 
@@ -30,6 +30,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Şema değişikliği = **yeni** migration dosyası (`supabase/migrations/<zaman>_<ad>.sql`); mevcut migration'lar düzenlenmez (canlıya uygulanmış olabilir). Değişiklikten sonra `tests/db` testleri güncellenip çalıştırılır.
 
 ## Önemli dosyalar
+- Site adı "ASUS Mimarlığın Evrimi" (`eventContent.title`, sekme + paylaşım başlığı), paylaşım açıklaması `eventContent.metaDescription`, paylaşım görseli `src/app/opengraph-image.jpg` (+ twitter-image.jpg, statik 1200×630). E-postalardaki ad canlı DB `event_settings.event_name`dan gelir (admin → Etkinlik ayarları).
 - `src/config/event.ts` — statik içerik (program, konuşmacılar, ürün, görseller, iletişim, KVKK onay bayrakları).
 - Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` ve `.portfolio` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
 - Hukuki metinler: `src/content/legal.ts` (ASUS'tan gelen KVKK Aydınlatma Metni + Gizlilik Politikası, 29 Ekim 2026). Metne dokunmadan önce hukuk onayı; değişince admin'den KVKK sürümünü artır.
@@ -51,7 +52,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 
 ## Kurulum kararları (20 Ekim 2026)
 - Site adresi (3 Kasım, son karar): `https://mimarliginevrimi.com` (www → apex yönlendirme) → `NEXT_PUBLIC_SITE_URL`, Supabase Auth Site URL. workshop.asus.com ve workshop.contracreative.com.tr planları iptal. Kodda sabit alan adı yok; yalnızca ortam değişkeni. Gönderici Resend'de bu domain doğrulanana kadar contracreative.com.tr üzerinden kalır.
-- Gönderici (şimdilik): `EMAIL_FROM="ASUS × Sedat Bayrak Workshop <baris@contracreative.com.tr>"`, `EMAIL_REPLY_TO=baris@contracreative.com.tr` (gerçek posta kutusu; katılımcı yanıtları buraya gelir). İleride workshop@ açılırsa yalnızca bu iki ortam değişkeni değişir + redeploy; kod değişmez. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
+- Gönderici (şimdilik): `EMAIL_FROM="ASUS Mimarlığın Evrimi <baris@contracreative.com.tr>"`, `EMAIL_REPLY_TO=baris@contracreative.com.tr` (gerçek posta kutusu; katılımcı yanıtları buraya gelir). İleride workshop@ açılırsa yalnızca bu iki ortam değişkeni değişir + redeploy; kod değişmez. Resend'de doğrulanan domain: `contracreative.com.tr` (bölge eu-west-1). Resend'in kayıtları `send.` ve `resend._domainkey` altında olduğundan şirketin mevcut e-posta (MX) kayıtlarına dokunulmaz.
 - Planlar: Supabase Pro + Vercel Pro hemen; Resend başvurular duyurulmadan önce Pro (ücretsizde günlük 100 e-posta sınırı).
 
 ## Canlı Supabase (20 Ekim 2026)
