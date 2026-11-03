@@ -132,7 +132,7 @@ export default async function HomePage() {
                 <span className="block">{hero.title[0]}</span>
                 <span className="block text-copper">{hero.title[1]}</span>
               </h1>
-              <p className="rise rise-2 mt-5 max-w-sm text-[15px] leading-relaxed text-white/85 sm:text-base lg:mt-7 lg:text-[15px]">{eventContent.tagline}</p>
+              <p className="rise rise-2 mt-5 max-w-[25rem] text-[15px] leading-relaxed text-white/85 sm:text-base lg:mt-7 lg:text-[15px]">{eventContent.tagline}</p>
               <div aria-hidden className="mt-7 h-px w-full max-w-[22rem] bg-white/25 lg:mt-9" />
 
               <div className="rise rise-3 mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-6 lg:mt-7 lg:block">
