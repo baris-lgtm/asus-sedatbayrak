@@ -176,12 +176,8 @@ export function ApplicationForm({
       <div ref={successRef} tabIndex={-1} role="status" className="rounded-[4px] border border-white/12 bg-white/[0.03] p-8 outline-none sm:p-10">
         <div className="mb-6 h-px w-14 bg-copper" aria-hidden />
         <h3 className="headline text-3xl text-white">Başvurunuz başarıyla alındı.</h3>
-        <p className="mt-4 max-w-xl leading-relaxed text-fog">
-          Başvurunuz ekip tarafından değerlendirildikten sonra sonucu e-posta ile bildirilecek.
-        </p>
-        <p className="mt-6 max-w-xl rounded-[4px] border border-white/12 px-4 py-3 text-sm leading-relaxed text-white/90">
-          Bu ekran başvurunuzun kabul edildiği anlamına gelmez. Katılımınız yalnızca onay e-postası ve QR kodlu davetiye
-          ile kesinleşir.
+        <p className="mt-4 max-w-xl leading-relaxed text-white/85">
+          Başvurunuzun değerlendirme sonucu e-posta yoluyla tarafınıza iletilecektir.
         </p>
       </div>
     );

@@ -69,7 +69,7 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
 
     await expect(page.getByText("Başvurunuz başarıyla alındı.")).toBeVisible();
-    await expect(page.getByText("Bu ekran başvurunuzun kabul edildiği anlamına gelmez.", { exact: false })).toBeVisible();
+    await expect(page.getByText("Başvurunuzun değerlendirme sonucu e-posta yoluyla tarafınıza iletilecektir.")).toBeVisible();
 
     const { data } = await service().from("applications").select("*").eq("email_normalized", email).single();
     expect(data.status).toBe("pending");
