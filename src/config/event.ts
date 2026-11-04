@@ -107,22 +107,22 @@ export const eventContent = {
     subtitle: "Mimarlık, yapay zekâ ve yaratıcı üretim üzerine uzman isimlerle bir gün.",
     items: [
       {
-        title: "Mimari görselleştirmede yapay zekâ",
+        title: "Yapay Zekâ ve Yeni Dünyanın Mimari Sunum Süreçleri",
         text: "Yapay zekâ araçları, modelleme teknikleri, agent'lar ve üretim ekosistemleri üzerine gerçek deneyimler ve güncel yaklaşımlar.",
         speakers: ["sedat", "fatih"],
         tone: "dark",
         image: { src: "/images/oturum-1-v2.webp", alt: "Gece ışıklandırmalı beton yapı", placeholderLabel: "Oturum 1 arka plan" },
       },
       {
-        title: "Yaratıcı üretim için ProArt",
+        title: "Yaratıcı Üretim için ProArt",
         text: "ASUS ProArt ekosistemiyle yaratıcı süreçlerde daha özgür, daha akıcı ve daha verimli bir üretim deneyimi.",
         speakers: ["mesut"],
         tone: "light",
         image: { src: "/images/proart-p16-white-rear.webp", alt: "ASUS ProArt P16 dizüstü bilgisayar, arkadan görünüm", placeholderLabel: "Oturum 2 · ProArt cihaz görseli" },
       },
       {
-        title: "Tasarım ve mimarlık pratiği",
-        text: "Strüktürel tasarım, büyük ölçekli projeler ve güncel mimarlık pratiği üzerine saha deneyimleri ve mesleki bakış açıları.",
+        title: "Mimarlık falan.",
+        text: "Strüktürel tasarımdan büyük ölçekli projelere, güncel mimarlık pratiğinden mesleğin gündemine; birçok alana uzanan seri bir söyleşi.",
         speakers: ["sedat", "omer"],
         tone: "dark",
         image: { src: "/images/oturum-3-v2.webp", alt: "Çizgi eskizli çok katlı yapı", placeholderLabel: "Oturum 3 arka plan" },
