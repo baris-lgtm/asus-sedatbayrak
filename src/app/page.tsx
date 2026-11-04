@@ -1,6 +1,6 @@
 import { eventContent, speakers, type Speaker, type SpeakerId } from "@/config/event";
 import { getEventSettings } from "@/lib/event-settings";
-import { formatEventDate, formatEventDateShort, formatEventTimeRange } from "@/lib/format";
+import { formatEventDate, formatEventDateShort } from "@/lib/format";
 import { ImageSlot } from "@/components/image-slot";
 import { ApplicationForm } from "@/components/application-form";
 import { SiteHeader } from "@/components/site-header";
@@ -63,8 +63,7 @@ export default async function HomePage() {
   const settings = await getEventSettings();
   const dateLong = formatEventDate(settings);
   const dateShort = formatEventDateShort(settings);
-  const time = formatEventTimeRange(settings);
-  const venue = settings.venue_confirmed ? settings.venue_name : null;
+  // Saat ve mekân herkese açık sayfada gösterilmez; yalnızca onaylı katılımcıların davetiye e-postasında yer alır.
   const { hero, about, sessions, speakersSection, product, application } = eventContent;
 
   const faqs: { q: string; a: React.ReactNode }[] = [
@@ -82,15 +81,11 @@ export default async function HomePage() {
     },
     {
       q: "Etkinlik çevrim içi mi gerçekleştirilecek?",
-      a: venue
-        ? `Hayır, etkinlik yüz yüze gerçekleştirilecek: ${venue}${settings.venue_address ? `, ${settings.venue_address}` : ""}. Girişte e-postayla gönderilen QR kodlu davetiyenizi okutmanız yeterli.`
-        : "Hayır, etkinlik yüz yüze gerçekleştirilecek. Mekân bilgisi kesinleştiğinde bu sayfada ve davetiyenizde paylaşılacak. Girişte e-postayla gönderilen QR kodlu davetiyenizi okutmanız yeterli.",
+      a: "Hayır, etkinlik İstanbul'da yüz yüze gerçekleştirilecek. Mekân ve saat bilgisi, başvurusu onaylanan katılımcılara davetiye e-postasıyla iletilecek. Girişte QR kodlu davetiyenizi okutmanız yeterli.",
     },
     {
       q: "Etkinlik ne zaman ve ne kadar sürecek?",
-      a: dateLong
-        ? `Workshop ${dateLong}${time ? `, ${time} saatleri arasında` : ""} gerçekleşecek.`
-        : `Workshop ${eventContent.approxDateText} tarihinde gerçekleşecek. Saat bilgisi davetiyenizde yer alacak; programın ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
+      a: `Workshop ${dateLong ?? eventContent.approxDateText} tarihinde gerçekleşecek. Saat ve mekân bilgisi davetiyenizde yer alacak; programın ${eventContent.approxDurationText.toLowerCase()} sürmesi planlanıyor.`,
     },
     {
       q: "QR kodumu kaybedersem ne yapmalıyım?",
@@ -139,7 +134,7 @@ export default async function HomePage() {
                 <div>
                   <p className="text-2xl font-medium sm:text-[1.75rem]">{dateShort ?? eventContent.approxDateText}</p>
                   <p className="mt-1.5 text-[13px] text-white/70">
-                    {[time, venue ?? eventContent.cityHint].filter(Boolean).join(" · ")}
+                    {eventContent.cityHint}
                   </p>
                 </div>
                 <a href="#basvuru" className="btn-ghost-light arrow-nudge w-full sm:w-auto lg:mt-8">

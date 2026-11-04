@@ -171,7 +171,7 @@ test.describe("Admin paneli", () => {
     }
   });
 
-  test("ayarlar: tarih/mekân kesinleşince ana sayfa ve e-postalar güncellenir", async ({ page }) => {
+  test("ayarlar: tarih kesinleşince ana sayfada görünür; saat ve mekân gizli kalır", async ({ page }) => {
     await page.goto("/admin/ayarlar");
     await page.getByLabel("Başlangıç (İstanbul saati)").fill("2026-10-31T12:00");
     await page.getByLabel("Bitiş (İstanbul saati)").fill("2026-10-31T17:00");
@@ -184,8 +184,10 @@ test.describe("Admin paneli", () => {
 
     await page.goto("/");
     await expect(page.getByText("31 Ekim 2026", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("12:00 – 17:00").first()).toBeVisible();
-    await expect(page.getByText("Test Sanat Merkezi").first()).toBeVisible();
+    // Saat ve mekân herkese açık sayfada görünmez (yalnızca onaylı katılımcıların e-postasında)
+    await expect(page.getByText("Test Sanat Merkezi")).toHaveCount(0);
+    await expect(page.getByText("12:00")).toHaveCount(0);
+    await expect(page.getByText("Örnek Mah.")).toHaveCount(0);
 
     // Doğrulama: mekân adresi olmadan "kesinleşti" işaretlenemez
     await page.goto("/admin/ayarlar");

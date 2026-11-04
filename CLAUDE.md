@@ -35,7 +35,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 - Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` ve `.portfolio` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
 - Hukuki metinler: `src/content/legal.ts` (ASUS'tan gelen KVKK Aydınlatma Metni + Gizlilik Politikası, 29 Ekim 2026). Metne dokunmadan önce hukuk onayı; değişince admin'den KVKK sürümünü artır.
 - Saklama: `purge_expired_applications()` etkinlik tarihinden (`starts_at`, `date_confirmed`) itibaren `retention_days` (365) sonra tüm başvuruları siler (migration 0006).
-- `event_settings` tablosu — tarih/mekân/kapasite (admin panelinden `/admin/ayarlar`). `*_confirmed` false ise bilgi gösterilmez.
+- `event_settings` tablosu — tarih/mekân/kapasite (admin panelinden `/admin/ayarlar`). `*_confirmed` false ise bilgi gösterilmez. **Landing yalnızca tarihi ve "İstanbul"u gösterir; saat ve mekân yalnızca onaylı katılımcıların e-postası/davetiye sayfasında** (4 Kasım kararı).
 - `src/lib/email/` — şablonlar, gönderim, bildirimler.
 - `src/app/admin/actions.ts` — tüm admin işlemleri.
 - `tests/e2e/` — Playwright; `EMAIL_TEST_SINK_DIR` ile e-postalar diske yazılır (yalnızca localhost'ta etkin).
