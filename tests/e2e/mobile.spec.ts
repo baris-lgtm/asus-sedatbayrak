@@ -20,7 +20,6 @@ test.describe("T16: mobil görünüm", () => {
     await page.getByLabel("Telefon").fill("05559876543");
     await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Profesyonel" });
     await page.getByLabel("Kurum / Okul").fill("Stüdyo");
-    await page.getByLabel("Katılım motivasyonunuz").fill("İç mimarlıkta yapay zekâ.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     const submit = page.getByRole("button", { name: "Başvuruyu gönder" });
     const box = await submit.boundingBox();

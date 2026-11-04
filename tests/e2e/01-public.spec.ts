@@ -41,7 +41,6 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
     await expect(page.getByText("Adınızı ve soyadınızı yazın.", { exact: true })).toBeVisible();
     await expect(page.getByText("E-posta adresinizi yazın.")).toBeVisible();
-    await expect(page.getByText("Katılım motivasyonunuzu kısaca yazın.")).toBeVisible();
     await expect(page.getByText("Devam etmek için aydınlatma metnini okuduğunuzu onaylayın.")).toBeVisible();
     await page.getByLabel("Ad Soyad").fill("Tekkelime");
     await page.getByRole("textbox", { name: /^E-posta/ }).fill("gecersiz-eposta");
@@ -62,13 +61,14 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByLabel("Telefon").fill("0532 123 45 67");
     await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Öğrenci" });
     await page.getByLabel("Kurum / Okul").fill("İTÜ");
-    await page.getByLabel("Kullandığınız tasarım araçları").fill("Revit, Blender");
-    await page.getByLabel(/Portfolyo bağlantısı/).fill("https://ornek.com/elif");
-    await page.getByLabel("Katılım motivasyonunuz").fill("Dijital üretim araçlarını öğrenmek istiyorum.");
+    await page.getByLabel(/Kullandığınız tasarım araçları/).fill("Revit, Blender");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
 
     await expect(page.getByText("Başvurunuz başarıyla alındı.")).toBeVisible();
+    // Motivasyon ve portfolyo alanları yok; araçlar isteğe bağlı
+    await expect(page.getByLabel(/motivasyon/i)).toHaveCount(0);
+    await expect(page.getByLabel(/Portfolyo/)).toHaveCount(0);
     await expect(page.getByText("Başvurunuzun değerlendirme sonucu e-posta yoluyla tarafınıza iletilecektir.")).toBeVisible();
 
     const { data } = await service().from("applications").select("*").eq("email_normalized", email).single();
@@ -77,9 +77,9 @@ test.describe("Landing page ve başvuru formu", () => {
     expect(data.marketing_consent).toBe(false);
     expect(data.marketing_consent_at).toBeNull();
     expect(data.kvkk_notice_version).toBe("TASLAK-v0");
-    expect(data.additional_answers.motivation).toContain("Dijital");
+    expect(data.additional_answers.motivation).toBeUndefined();
     expect(data.additional_answers.tools).toBe("Revit, Blender");
-    expect(data.additional_answers.portfolio).toBe("https://ornek.com/elif");
+    expect(data.additional_answers.portfolio).toBeUndefined();
     expect(data).toMatchObject({ first_name: "Elif Su", last_name: "Yılmaz", participant_type: "student", institution: "İTÜ", department: null });
 
     const { data: logs } = await service().from("email_logs").select("email_type, status, provider_message_id").eq("application_id", data.id);
@@ -111,7 +111,6 @@ test.describe("Landing page ve başvuru formu", () => {
     const body = await res.json();
     expect(body.fieldErrors).toMatchObject({
       fullName: expect.any(String),
-      motivation: expect.any(String),
       email: "Geçerli bir e-posta adresi yazın (ör. ad@ornek.com).",
       participantType: expect.any(String),
       kvkkAcknowledged: expect.any(String),
@@ -137,7 +136,6 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByLabel("Telefon").fill("05551234567");
     await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Akademisyen" });
     await page.getByLabel("Kurum / Okul").fill("ODTÜ");
-    await page.getByLabel("Katılım motivasyonunuz").fill("Merak ediyorum.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
     await expect(page.locator("main [role=alert]")).toContainText("daha önce başvuru yapılmış");
@@ -152,7 +150,6 @@ test.describe("Landing page ve başvuru formu", () => {
     await page.getByLabel("Telefon").fill("05551234567");
     await page.getByLabel("Profesyonel / Öğrenci").selectOption({ label: "Diğer" });
     await page.getByLabel("Kurum / Okul").fill("Serbest");
-    await page.getByLabel("Katılım motivasyonunuz").fill("Fotoğraf ve mimari.");
     await page.getByRole("checkbox", { name: /KVKK aydınlatma metnini/ }).check();
     await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
     await expect(page.locator("main [role=alert]")).toContainText("Bağlantı kurulamadı");

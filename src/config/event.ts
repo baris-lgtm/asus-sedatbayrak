@@ -161,7 +161,7 @@ export const eventContent = {
   application: {
     eyebrow: "Başvuru",
     title: ["Katılım için", "başvurun."],
-    text: "Mimarlık, 3D modelleme ve yapay zekâ etrafında şekillenen bu özel buluşmada yer almak için aşağıdaki formu doldurun.",
+    text: "Mimarlık üretim süreçlerini konuşacağımız, İstanbul'da gerçekleşecek bu özel buluşmada yer almak için aşağıdaki formu doldurun. (Katılım onayı ve etkinlik yeri e-posta yoluyla iletilecektir.)",
     image: {
       src: "/images/basvuru-eskiz-v2.webp",
       alt: "Eskiz çizgileriyle çizilmiş mimari yapı",
@@ -173,18 +173,16 @@ export const eventContent = {
       phone: "Telefon",
       participantType: "Profesyonel / Öğrenci",
       institution: "Kurum / Okul",
-      tools: "Kullandığınız tasarım araçları",
+      tools: "Kullandığınız tasarım araçları (isteğe bağlı)",
       toolsPlaceholder: "Ör. AutoCAD, Revit, 3ds Max, Blender…",
-      portfolio: "Portfolyo bağlantısı (isteğe bağlı)",
-      motivation: "Katılım motivasyonunuz",
-      motivationPlaceholder: "Bu etkinliğe katılma motivasyonunuzu bizimle paylaşın…",
-      note: "Başvurular ilgi alanı ve katılım motivasyonuna göre değerlendirilir. Katılım onayı e-posta ile iletilir.",
+      note: "Başvurular meslek dağılımı ve başvuru sırasına göre onaylanacak; katılım onayı, etkinlik adresiyle birlikte e-posta ile iletilecektir.",
     },
   },
 
   /** Admin detayında ve CSV'de gösterilen ek form yanıtları (applications.additional_answers). */
   answerFields: [
     { id: "tools", label: "Kullandığı tasarım araçları" },
+    // Formdan kaldırıldı (4 Kasım); eski başvurularda varsa admin detay/CSV'de görünür.
     { id: "portfolio", label: "Portfolyo bağlantısı" },
     { id: "motivation", label: "Katılım motivasyonu" },
   ],

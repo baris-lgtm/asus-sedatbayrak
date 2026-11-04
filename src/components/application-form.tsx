@@ -6,9 +6,7 @@ import { useForm, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   applicationSchema,
-  MOTIVATION_MAX,
   TOOLS_MAX,
-  PORTFOLIO_MAX,
   type ApplicationData,
   type ApplicationInput,
   type FieldErrors,
@@ -78,9 +76,6 @@ export interface FormCopy {
   institution: string;
   tools: string;
   toolsPlaceholder: string;
-  portfolio: string;
-  motivation: string;
-  motivationPlaceholder: string;
   note: string;
 }
 
@@ -133,8 +128,6 @@ export function ApplicationForm({
           participantType: data.participantType,
           institution: data.institution,
           tools: data.tools,
-          portfolio: data.portfolio,
-          motivation: data.motivation,
           kvkkAcknowledged: data.kvkkAcknowledged,
           marketingConsent: data.marketingConsent,
           website: data.website,
@@ -190,8 +183,6 @@ export function ApplicationForm({
     participantType: `${uid}-durum`,
     institution: `${uid}-kurum`,
     tools: `${uid}-araclar`,
-    portfolio: `${uid}-portfolyo`,
-    motivation: `${uid}-motivasyon`,
     kvkk: `${uid}-kvkk`,
     marketing: `${uid}-pazarlama`,
   };
@@ -271,27 +262,6 @@ export function ApplicationForm({
         </Field>
         <Field id={ids.tools} label={copy.tools} error={errors.tools?.message}>
           {input("tools", register("tools"), { maxLength: TOOLS_MAX, placeholder: copy.toolsPlaceholder })}
-        </Field>
-        <Field id={ids.portfolio} label={copy.portfolio} error={errors.portfolio?.message} className="sm:col-span-2">
-          {input("portfolio", register("portfolio"), {
-            type: "url",
-            inputMode: "url",
-            autoComplete: "url",
-            maxLength: PORTFOLIO_MAX,
-            placeholder: "https://",
-          })}
-        </Field>
-        <Field id={ids.motivation} label={copy.motivation} required error={errors.motivation?.message} className="sm:col-span-2">
-          <textarea
-            id={ids.motivation}
-            rows={4}
-            maxLength={MOTIVATION_MAX}
-            placeholder={copy.motivationPlaceholder}
-            className="field-dark resize-y"
-            aria-invalid={errors.motivation ? true : undefined}
-            aria-describedby={describedBy(ids.motivation, errors.motivation?.message)}
-            {...register("motivation")}
-          />
         </Field>
       </div>
 

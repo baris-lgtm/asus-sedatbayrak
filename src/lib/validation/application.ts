@@ -10,9 +10,7 @@ import { PARTICIPANT_TYPES } from "@/lib/types";
 const clean = (v: string) =>
   v.normalize("NFC").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim();
 
-export const MOTIVATION_MAX = 600;
 export const TOOLS_MAX = 300;
-export const PORTFOLIO_MAX = 300;
 
 /** "Ayşe Nur Yılmaz" → ad "Ayşe Nur", soyad "Yılmaz" (son kelime soyad). */
 export function splitFullName(full: string): { firstName: string; lastName: string } | null {
@@ -59,21 +57,6 @@ export const applicationSchema = z
       .transform(clean)
       .pipe(z.string().max(TOOLS_MAX, `En fazla ${TOOLS_MAX} karakter yazabilirsiniz.`))
       .optional(),
-    portfolio: z
-      .string()
-      .trim()
-      .max(PORTFOLIO_MAX, "Bağlantı çok uzun.")
-      .refine((v) => v === "" || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), "Bağlantıyı https:// ile başlayarak yazın.")
-      .optional(),
-    motivation: z
-      .string({ error: "Katılım motivasyonunuzu kısaca yazın." })
-      .transform(clean)
-      .pipe(
-        z
-          .string()
-          .min(1, "Katılım motivasyonunuzu kısaca yazın.")
-          .max(MOTIVATION_MAX, `En fazla ${MOTIVATION_MAX} karakter yazabilirsiniz.`),
-      ),
     kvkkAcknowledged: z.literal(true, { error: "Devam etmek için aydınlatma metnini okuduğunuzu onaylayın." }),
     marketingConsent: z.boolean().optional().default(false),
     /** Honeypot: gerçek kullanıcılar bu alanı görmez ve boş bırakır. */

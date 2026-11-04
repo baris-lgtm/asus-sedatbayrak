@@ -126,7 +126,7 @@ export default async function ApplicationDetail({
                 </div>
               ))}
             </dl>
-            {eventContent.answerFields.map((f) => (
+            {eventContent.answerFields.filter((f) => f.id === "tools" || app.additional_answers?.[f.id]).map((f) => (
               <div key={f.id} className="mt-4 border-t border-rule pt-4">
                 <p className="text-sm text-graphite">{f.label}</p>
                 <p className="mt-1 whitespace-pre-line">{app.additional_answers?.[f.id] || "—"}</p>

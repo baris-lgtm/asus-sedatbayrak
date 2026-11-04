@@ -32,7 +32,7 @@ Yerel Supabase için DB testi: `PGPASSWORD=postgres PGHOST=127.0.0.1 PGPORT=5432
 ## Önemli dosyalar
 - Site adı "ASUS Mimarlığın Evrimi" (`eventContent.title`, sekme + paylaşım başlığı), paylaşım açıklaması `eventContent.metaDescription`, paylaşım görseli `src/app/opengraph-image.jpg` (+ twitter-image.jpg, statik 1200×630). E-postalardaki ad canlı DB `event_settings.event_name`dan gelir (admin → Etkinlik ayarları).
 - `src/config/event.ts` — statik içerik (program, konuşmacılar, ürün, görseller, iletişim, KVKK onay bayrakları).
-- Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` ve `.portfolio` (isteğe bağlı) ve `additional_answers.motivation` (zorunlu); `department` artık boş. Landing metinleri "siz" hitabıyla.
+- Başvuru formu: tek "Ad Soyad" alanı (son kelime soyad → first_name/last_name), Kurum/Okul, `additional_answers.tools` (isteğe bağlı). Motivasyon ve portfolyo alanları 4 Kasım'da kaldırıldı (eski kayıtlarda varsa admin detayında görünür); `department` artık boş. Landing metinleri "siz" hitabıyla.
 - Hukuki metinler: `src/content/legal.ts` (ASUS'tan gelen KVKK Aydınlatma Metni + Gizlilik Politikası, 29 Ekim 2026). Metne dokunmadan önce hukuk onayı; değişince admin'den KVKK sürümünü artır.
 - Saklama: `purge_expired_applications()` etkinlik tarihinden (`starts_at`, `date_confirmed`) itibaren `retention_days` (365) sonra tüm başvuruları siler (migration 0006).
 - `event_settings` tablosu — tarih/mekân/kapasite (admin panelinden `/admin/ayarlar`). `*_confirmed` false ise bilgi gösterilmez. **Landing yalnızca tarihi ve "İstanbul"u gösterir; saat ve mekân yalnızca onaylı katılımcıların e-postası/davetiye sayfasında** (4 Kasım kararı).
