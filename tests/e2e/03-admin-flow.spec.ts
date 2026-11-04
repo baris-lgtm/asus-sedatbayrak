@@ -251,7 +251,7 @@ test.describe("KVKK silme ve katılımcı bilgilendirme", () => {
 
     const reminders = mailsTo(p1.email, "reminder");
     expect(reminders).toHaveLength(1);
-    expect(reminders[0].subject).toContain("hatırlatma");
+    expect(reminders[0].subject).toContain("Hatırlatma");
     expect(reminders[0].text).toContain("yaklaşıyor");
     expect(reminders[0].attachments[0]).toMatchObject({ contentId: "davetiye-qr" });
     expect(invitationFromMail(reminders[0]).token).toBe(invitationFromMail(mailsTo(p1.email, "invitation")[0]).token);

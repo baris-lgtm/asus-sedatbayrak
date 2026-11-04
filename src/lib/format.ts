@@ -22,12 +22,14 @@ export function formatEventDateShort(s: Pick<EventSettings, "starts_at" | "date_
   );
 }
 
-/** "12.00 – 17.00" — tarih kesinleşmediyse null. */
+/** "12.00–17.00" — tarih kesinleşmediyse null. */
 export function formatEventTimeRange(s: Pick<EventSettings, "starts_at" | "ends_at" | "date_confirmed">): string | null {
   if (!s.date_confirmed || !s.starts_at) return null;
   const f = new Intl.DateTimeFormat("tr-TR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
-  const start = f.format(new Date(s.starts_at));
-  return s.ends_at ? `${start} – ${f.format(new Date(s.ends_at))}` : start;
+  // Türkçe yazım: 15.00–20.00
+  const hm = (d: string) => f.format(new Date(d)).replace(":", ".");
+  const start = hm(s.starts_at);
+  return s.ends_at ? `${start}–${hm(s.ends_at)}` : start;
 }
 
 /** Admin ekranları için: "17.10.2026 15:08" */

@@ -87,8 +87,8 @@ export function mailsTo(to: string, type?: string) {
 
 /** Davetiye e-postasından QR URL'si ve giriş kodu. */
 export function invitationFromMail(m: SinkMail) {
-  const url = m.text.match(/Davetiyen: (\S+)/)?.[1];
-  const code = m.text.match(/Giriş kodun \(QR okutulamazsa\): (\S+)/)?.[1];
+  const url = m.text.match(/kişisel davetiyenize ulaşabilirsiniz: (\S+)/)?.[1];
+  const code = m.text.match(/kullanabileceğiniz giriş kodu:\n(\S+)/)?.[1];
   if (!url || !code) throw new Error("Davetiye e-postasında URL/kod yok");
   return { url, code, token: url.split("/").pop() as string };
 }

@@ -20,7 +20,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
   const { token } = await params;
   if (!isWellFormedToken(token)) notFound();
   if (!(await rateLimit(hashKey("invite-view", await clientIp()), 60, 60))) {
-    return <Message title="Çok fazla istek" body="Lütfen bir dakika sonra tekrar dene." />;
+    return <Message title="Çok fazla istek" body="Lütfen bir dakika sonra tekrar deneyin." />;
   }
 
   const { data: inv } = await createAdminClient()
@@ -36,7 +36,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
   if (!inv) notFound();
 
   if (inv.revoked_at || inv.applications.status === "cancelled") {
-    return <Message title="Bu davetiye geçerli değil" body="Davetiye iptal edilmiş veya yenisiyle değiştirilmiş. Güncel davetiyen için e-postanı kontrol et." />;
+    return <Message title="Bu davetiye geçerli değil" body="Davetiye iptal edilmiş veya yenisiyle değiştirilmiş. Güncel davetiyeniz için e-postanızı kontrol edin." />;
   }
 
   const settings = await getEventSettings();
@@ -59,7 +59,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
           ) : (
             <>
               <div className="mx-auto w-full max-w-[280px]" role="img" aria-label="Giriş QR kodu" dangerouslySetInnerHTML={{ __html: qr }} />
-              <p className="mt-5 text-center text-sm text-graphite">QR okutulamazsa giriş kodun</p>
+              <p className="mt-5 text-center text-sm text-graphite">QR okutulamazsa giriş kodunuz</p>
               <p className="text-center font-mono text-2xl font-bold tracking-widest">{code}</p>
             </>
           )}
@@ -77,7 +77,7 @@ export default async function InvitationPage({ params }: { params: Promise<{ tok
             </dd>
           </div>
         </dl>
-        <p className="mt-8 text-sm text-neutral-400">Bu davetiye kişiye özeldir ve tek girişliktir. Bağlantıyı başkalarıyla paylaşma.</p>
+        <p className="mt-8 text-sm text-neutral-400">Davetiyeniz size özeldir ve tek giriş hakkı sağlar. Lütfen bağlantıyı başkalarıyla paylaşmayın.</p>
       </div>
     </main>
   );

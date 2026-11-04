@@ -43,7 +43,7 @@ function layout(opts: { preheader: string; title: string; bodyHtml: string; even
 ${opts.bodyHtml}
 </td></tr>
 <tr><td style="padding:20px 32px;border-top:1px solid ${RULE};font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:${GRAPHITE};">
-Bu e-postayı ${escapeHtml(opts.eventName)} başvurun nedeniyle aldın. Kişisel verilerin KVKK aydınlatma metni kapsamında işlenir.
+Bu e-postayı ${escapeHtml(opts.eventName)} başvurunuz nedeniyle aldınız. Kişisel verileriniz KVKK Aydınlatma Metni kapsamında işlenir.
 </td></tr>
 </table></td></tr></table></body></html>`;
 }
@@ -71,21 +71,22 @@ ${rows
 }
 
 export function applicationReceivedEmail(firstName: string, s: EventSettings): EmailContent {
-  const title = "Başvurun alındı";
+  const title = "Başvurunuz alındı";
   const lines = [
     `Merhaba ${firstName},`,
-    `${s.event_name} için başvurun bize ulaştı.`,
-    "Başvurun ekip tarafından incelenecek ve sonucu bu e-posta adresine bildirilecek. Bu e-posta başvurunun kabul edildiği anlamına gelmez; katılımın yalnızca onay e-postası ve QR kodlu davetiye ile kesinleşir.",
+    `${s.event_name} etkinliği için başvurunuz bize ulaştı. İlginiz için teşekkür ederiz.`,
+    "Başvurular meslek dağılımı ve başvuru sırasına göre değerlendirilir. Değerlendirme sonucu, bu e-posta adresine iletilecektir; katılımınız onaylanırsa etkinlik adresi ve kişisel QR kodlu davetiyeniz de aynı e-postayla gönderilecektir.",
+    "Bu e-posta yalnızca başvurunuzun alındığını bildirir; katılımınız onay e-postasıyla kesinleşir.",
   ];
   return {
-    subject: `${s.event_name} — başvurun alındı`,
+    subject: `${s.event_name} — Başvurunuz alındı`,
     html: layout({
-      preheader: "Başvurun incelemeye alındı. Sonucu e-postayla bildireceğiz.",
+      preheader: "Başvurunuz alındı. Değerlendirme sonucu e-posta ile iletilecektir.",
       title,
       eventName: s.event_name,
-      bodyHtml: lines.map((l) => p(escapeHtml(l))).join(""),
+      bodyHtml: lines.map((l) => p(escapeHtml(l))).join("") + p("Saygılarımızla,<br>ASUS Türkiye"),
     }),
-    text: lines.join("\n\n"),
+    text: [...lines, "Saygılarımızla,\nASUS Türkiye"].join("\n\n"),
   };
 }
 
@@ -101,66 +102,76 @@ export function invitationEmail(opts: {
   const { firstName, settings: s, invitationUrl, manualCode, qrContentId, mode } = opts;
   const details = eventDetails(s);
   const title = {
-    initial: "Başvurun onaylandı",
-    resend: "Davetiyen (yeniden gönderim)",
+    initial: "Katılımınız onaylandı!",
+    resend: "Davetiyeniz",
     update: "Etkinlik bilgileri güncellendi",
-    reminder: "Etkinlik yaklaşıyor",
+    reminder: "Etkinlik yaklaşıyor!",
   }[mode];
   const intro = {
-    initial: `${s.event_name} için başvurun onaylandı. Katılımın kesinleşti; aşağıdaki QR kod senin kişisel davetiyendir.`,
-    resend: "İsteğin üzerine davetiyeni yeniden gönderiyoruz. QR kodun ve giriş kodun değişmedi.",
-    update: `${s.event_name} için güncel tarih ve mekân bilgileri aşağıda. Davetiyen ve QR kodun değişmedi; girişte aynı kodu okutman yeterli.`,
-    reminder: `${s.event_name} yaklaşıyor; seni aramızda görmeyi bekliyoruz. Etkinlik bilgileri ve kişisel davetiyen aşağıda. Girişte QR kodunu okutman yeterli.`,
+    initial: `${s.event_name} etkinliğine katılımınız onaylandı. Sizi aramızda görmekten mutluluk duyacağız!`,
+    resend: "Talebiniz üzerine davetiyenizi yeniden gönderiyoruz. QR kodunuz ve giriş kodunuz değişmedi.",
+    update: `${s.event_name} etkinliğine ait güncel bilgiler aşağıda yer alıyor. Davetiyeniz ve QR kodunuz değişmedi; girişte aynı kodu kullanabilirsiniz.`,
+    reminder: `${s.event_name} etkinliği yaklaşıyor. Sizi aramızda görmekten mutluluk duyacağız!`,
   }[mode];
+  const lead = "Etkinlik girişinde kullanabileceğiniz kişisel QR kodunuz ve etkinlik detayları aşağıda yer alıyor.";
+  const codeLabel = "QR kodunuzun okunamaması durumunda kullanabileceğiniz giriş kodu:";
+  const personal = "Davetiyeniz size özeldir ve tek giriş hakkı sağlar. Lütfen QR kodunuzu ve giriş kodunuzu başkalarıyla paylaşmayın.";
+  const cancel =
+    "Etkinliğe katılım sağlayamayacak olmanız durumunda, bu e-postayı yanıtlayarak bizi bilgilendirmenizi rica ederiz. Böylece kontenjanınızı yedek listede bekleyen bir katılımcıya sunabiliriz.";
+
   const html = layout({
-    preheader: "QR kodlu davetiyen ekte. Girişte bu kodu okutman yeterli.",
+    preheader: "Kişisel QR kodunuz ve etkinlik detayları bu e-postada.",
     title,
     eventName: s.event_name,
-    bodyHtml: `${p(`Merhaba ${escapeHtml(firstName)},`)}${p(escapeHtml(intro))}
+    bodyHtml: `${p(`Merhaba ${escapeHtml(firstName)},`)}${p(escapeHtml(intro))}${p(escapeHtml(lead))}
 ${details.html}
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 20px;">
 <tr><td align="center" style="padding:24px;border:2px solid ${INK};">
 <img src="cid:${qrContentId}" width="240" height="240" alt="Giriş QR kodu" style="display:block;width:240px;height:240px;margin:0 auto 16px;">
-<div style="font-size:13px;color:${GRAPHITE};margin-bottom:4px;">QR okutulamazsa giriş kodun</div>
+<div style="font-size:13px;color:${GRAPHITE};margin-bottom:4px;">${escapeHtml(codeLabel)}</div>
 <div style="font-family:'Courier New',Courier,monospace;font-size:24px;font-weight:700;letter-spacing:0.08em;">${escapeHtml(manualCode)}</div>
 </td></tr></table>
-${p(`QR kodu görünmüyorsa davetiyeni buradan açabilirsin: <a href="${escapeHtml(invitationUrl)}" style="color:${BLUE};">Davetiyemi aç</a>`)}
-${p("Bu davetiye kişiye özeldir ve yalnızca bir kez giriş için kullanılabilir. Lütfen başkalarıyla paylaşma.")}
-${p("Katılamayacaksan bu e-postayı yanıtlayarak bize haber ver; yerin yedek listedeki bir katılımcıya verilebilsin.")}`,
+${p(`QR kodunuzu görüntüleyemiyorsanız <a href="${escapeHtml(invitationUrl)}" style="color:${BLUE};">“Davetiyemi aç”</a> bağlantısından kişisel davetiyenize ulaşabilirsiniz.`)}
+${p(escapeHtml(personal))}
+${p(escapeHtml(cancel))}
+${p("Etkinlikte görüşmek üzere!<br>ASUS Türkiye")}`,
   });
   const text = [
     `Merhaba ${firstName},`,
     intro,
+    lead,
     details.text,
-    `Davetiyen: ${invitationUrl}`,
-    `Giriş kodun (QR okutulamazsa): ${manualCode}`,
-    "Bu davetiye kişiye özeldir ve yalnızca bir kez giriş için kullanılabilir.",
+    `${codeLabel}\n${manualCode}`,
+    `QR kodunuzu görüntüleyemiyorsanız “Davetiyemi aç” bağlantısından kişisel davetiyenize ulaşabilirsiniz: ${invitationUrl}`,
+    personal,
+    cancel,
+    "Etkinlikte görüşmek üzere!\nASUS Türkiye",
   ].join("\n\n");
-  const subject =
-    mode === "update"
-      ? `${s.event_name} — tarih ve mekân bilgisi`
-      : mode === "reminder"
-        ? `${s.event_name} — hatırlatma: davetiyen`
-        : `${s.event_name} — davetiyen`;
+  const subject = {
+    initial: `${s.event_name} — Katılımınız onaylandı`,
+    resend: `${s.event_name} — Davetiyeniz`,
+    update: `${s.event_name} — Güncel etkinlik bilgileri`,
+    reminder: `${s.event_name} — Hatırlatma: davetiyeniz`,
+  }[mode];
   return { subject, html, text };
 }
 
 export function statusEmail(kind: "waitlisted" | "rejected" | "cancelled", firstName: string, s: EventSettings): EmailContent {
   const copy = {
     waitlisted: {
-      subject: `${s.event_name} — yedek listedesin`,
-      title: "Yedek listeye alındın",
-      body: "Workshop kapasitesi şu an dolu olduğu için başvurunu yedek listeye aldık. Yer açılırsa seni e-postayla bilgilendireceğiz. Bu aşamada katılımın kesinleşmiş değildir; lütfen onay e-postası almadan etkinlik alanına gelme.",
+      subject: `${s.event_name} — Yedek listedesiniz`,
+      title: "Yedek listeye alındınız",
+      body: "Etkinlik kontenjanı şu an dolu olduğu için başvurunuzu yedek listeye aldık. Yer açılması durumunda sizi e-posta ile bilgilendireceğiz. Bu aşamada katılımınız kesinleşmiş değildir; lütfen onay e-postası almadan etkinlik alanına gelmeyiniz.",
     },
     rejected: {
-      subject: `${s.event_name} — başvurunla ilgili`,
-      title: "Başvurun hakkında",
-      body: "Başvurunu dikkatle inceledik. Sınırlı kapasite nedeniyle bu workshop için sana yer ayıramıyoruz. İlgin için teşekkür ederiz.",
+      subject: `${s.event_name} — Başvurunuz hakkında`,
+      title: "Başvurunuz hakkında",
+      body: "Başvurunuzu dikkatle inceledik. Sınırlı kontenjan nedeniyle bu etkinlik için size yer ayıramıyoruz. Gösterdiğiniz ilgi için teşekkür eder, gelecek etkinliklerimizde görüşmeyi dileriz.",
     },
     cancelled: {
-      subject: `${s.event_name} — katılımın iptal edildi`,
-      title: "Katılımın iptal edildi",
-      body: "Workshop katılımın iptal edildi ve daha önce gönderilen davetiye artık geçerli değil. Bunun bir hata olduğunu düşünüyorsan bu e-postayı yanıtlayarak bize ulaşabilirsin.",
+      subject: `${s.event_name} — Katılımınız iptal edildi`,
+      title: "Katılımınız iptal edildi",
+      body: "Etkinlik katılımınız iptal edildi ve daha önce gönderilen davetiye artık geçerli değildir. Bunun bir hata olduğunu düşünüyorsanız bu e-postayı yanıtlayarak bize ulaşabilirsiniz.",
     },
   }[kind];
   return {
@@ -169,8 +180,8 @@ export function statusEmail(kind: "waitlisted" | "rejected" | "cancelled", first
       preheader: copy.title,
       title: copy.title,
       eventName: s.event_name,
-      bodyHtml: p(`Merhaba ${escapeHtml(firstName)},`) + p(escapeHtml(copy.body)),
+      bodyHtml: p(`Merhaba ${escapeHtml(firstName)},`) + p(escapeHtml(copy.body)) + p("Saygılarımızla,<br>ASUS Türkiye"),
     }),
-    text: `Merhaba ${firstName},\n\n${copy.body}`,
+    text: `Merhaba ${firstName},\n\n${copy.body}\n\nSaygılarımızla,\nASUS Türkiye`,
   };
 }
