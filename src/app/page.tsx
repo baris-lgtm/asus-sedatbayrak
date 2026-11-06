@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { BackgroundVideo, ProductVideo } from "@/components/hero-video";
 import { ArrowRight, ProgramMark } from "@/components/brand";
+import { FreeBadge } from "@/components/free-badge";
 
 // Etkinlik ayarları admin panelinden değişir; sayfa en geç 60 sn'de güncellenir
 // (ayar kaydında ayrıca anında yenilenir).
@@ -119,6 +120,8 @@ export default async function HomePage() {
               className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(13,12,11,0.55)_0%,rgba(13,12,11,0.05)_22%,rgba(13,12,11,0.35)_45%,rgba(13,12,11,0.9)_68%,#0d0c0b_100%)] lg:hidden"
             />
           </div>
+          {/* "Katılım Ücretsizdir" rozeti — mobilde video düğmesinin altında, masaüstünde görselin sağ üstünde */}
+          <FreeBadge className="absolute right-4 top-[4.25rem] z-20 w-[6.25rem] text-[14.5px] sm:right-8 sm:top-20 sm:w-[8rem] sm:text-[18.5px] lg:right-[7%] lg:top-14 lg:w-[10rem] lg:text-[23px]" />
           <div className="pointer-events-none relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl flex-col justify-end px-5 pb-10 pt-24 sm:min-h-[min(calc(100svh-4rem),58rem)] sm:px-8 sm:pb-14 lg:block lg:min-h-0 lg:pb-28 lg:pt-16">
             <div className="pointer-events-auto max-w-md sm:max-w-lg lg:max-w-md">
               <ProgramMark className="rise text-[16px] sm:text-[18px] lg:text-[17px]" />
