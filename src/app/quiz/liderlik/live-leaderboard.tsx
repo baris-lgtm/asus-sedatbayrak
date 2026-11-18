@@ -37,7 +37,7 @@ function Row({ e, prize }: { e: LeaderboardEntry; prize: boolean }) {
   );
 }
 
-export function LiveLeaderboard({ initial, qrSvg, quizUrl }: { initial: Board; qrSvg: string; quizUrl: string }) {
+export function LiveLeaderboard({ initial }: { initial: Board }) {
   const [board, setBoard] = useState(initial);
   const [stale, setStale] = useState(false);
 
@@ -69,7 +69,7 @@ export function LiveLeaderboard({ initial, qrSvg, quizUrl }: { initial: Board; q
   const rest = board.entries.filter((e) => e.rank > QUIZ_PRIZE_COUNT);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8 sm:py-12 lg:grid lg:grid-cols-[1fr_17rem] lg:gap-14">
+    <section className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
       <div>
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
           <div>
@@ -123,13 +123,6 @@ export function LiveLeaderboard({ initial, qrSvg, quizUrl }: { initial: Board; q
         )}
       </div>
 
-      <aside className="mt-12 hidden lg:block">
-        <div className="sticky top-8 rounded-[4px] border border-white/10 bg-night-2 p-7 text-center">
-          <p className="text-sm text-white/70">Quize katılmak için okutun</p>
-          <div className="mx-auto mt-5 w-full max-w-[12rem]" aria-hidden dangerouslySetInnerHTML={{ __html: qrSvg }} />
-          <p className="mt-5 break-all text-sm text-copper">{quizUrl}</p>
-        </div>
-      </aside>
     </section>
   );
 }

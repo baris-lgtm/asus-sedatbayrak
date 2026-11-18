@@ -102,10 +102,32 @@ export function QuizApp({ initial, questions, totalQuestions }: { initial: QuizS
     window.scrollTo({ top: 0 });
   }, []);
 
-  if (view.kind === "playing") return <Playing key={view.attemptId} view={view} onFinished={apply} onClosed={() => setView({ kind: "closed" })} />;
-  if (view.kind === "finished") return <Finished fullName={view.fullName} result={view.result} />;
+  if (view.kind === "playing") return (
+      <Playing
+        key={view.attemptId}
+        view={view}
+        onFinished={apply}
+        onClosed={() => setView({ kind: "closed" })}
+        onAbandon={() => {
+          clearProgress(view.attemptId);
+          void nextParticipant(setView);
+        }}
+      />
+    );
+  if (view.kind === "finished") return <Finished fullName={view.fullName} result={view.result} onNext={() => nextParticipant(setView)} />;
   if (view.kind === "closed") return <Closed />;
   return <Entry total={totalQuestions} onStarted={apply} onClosed={() => setView({ kind: "closed" })} />;
+}
+
+/** Ortak cihaz: bu cihazın deneme bağlantısını bırakır (deneme kayıtlı kalır), giriş ekranına döner. */
+async function nextParticipant(setView: (v: View) => void) {
+  try {
+    await fetch("/api/quiz/release", { method: "POST" });
+  } catch {
+    /* çerez silinemediyse sayfa yenilenince yine sonuç görünür; tekrar denenebilir */
+  }
+  setView({ kind: "entry" });
+  window.scrollTo({ top: 0 });
 }
 
 /* ——— Giriş ——— */
@@ -187,7 +209,6 @@ function Entry({ total, onStarted, onClosed }: { total: number; onStarted: (d: A
           {pending ? "Başlatılıyor…" : "Quize başla"}
           <ArrowRight />
         </button>
-        <p className="mt-4 text-center text-xs text-white/45">Her cihazdan bir kez katılabilirsiniz.</p>
       </form>
     </section>
   );
@@ -209,10 +230,12 @@ function Playing({
   view,
   onFinished,
   onClosed,
+  onAbandon,
 }: {
   view: Extract<View, { kind: "playing" }>;
   onFinished: (d: ApiResponse) => void;
   onClosed: () => void;
+  onAbandon: () => void;
 }) {
   const n = view.questions.length;
   const [{ answers, index }, setProgress] = useState(() => ({ answers: Array<Answer>(n).fill(null), index: 0 }));
@@ -379,14 +402,25 @@ function Playing({
           </div>
         </div>
       )}
-      <p className="mt-6 text-center text-xs text-white/35">{view.fullName}</p>
+      <p className="mt-6 text-center text-xs text-white/35">
+        {view.fullName} ·{" "}
+        <button
+          type="button"
+          className="underline underline-offset-2 hover:text-white/70"
+          onClick={() => {
+            if (confirm("Bu deneme yarıda bırakılsın mı? Cevaplar gönderilmez ve sıralamaya girmez.")) onAbandon();
+          }}
+        >
+          Katılımcı değiştir
+        </button>
+      </p>
     </section>
   );
 }
 
 /* ——— Sonuç ——— */
 
-function Finished({ fullName, result }: { fullName: string; result: QuizResult }) {
+function Finished({ fullName, result, onNext }: { fullName: string; result: QuizResult; onNext: () => void }) {
   const inPrize = result.rank <= QUIZ_PRIZE_COUNT;
   const first = fullName.split(" ")[0];
   return (
@@ -414,10 +448,15 @@ function Finished({ fullName, result }: { fullName: string; result: QuizResult }
           ? `Şu an ilk ${QUIZ_PRIZE_COUNT}'tesiniz. Quiz kapanana kadar sıralama değişebilir; sonuçları liderlik tablosundan takip edin.`
           : `İlk ${QUIZ_PRIZE_COUNT} kişi hediye kazanır. Quiz kapanana kadar sıralama değişebilir.`}
       </p>
-      <Link href="/quiz/liderlik" className="btn-copper arrow-nudge rise rise-3 mx-auto mt-8">
-        Liderlik tablosunu gör
-        <ArrowRight />
-      </Link>
+      <div className="rise rise-3 mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
+        <button type="button" onClick={onNext} className="btn-copper arrow-nudge">
+          Sonraki katılımcı
+          <ArrowRight />
+        </button>
+        <Link href="/quiz/liderlik" className="btn-ghost-light !border-white/25">
+          Liderlik tablosu
+        </Link>
+      </div>
     </section>
   );
 }

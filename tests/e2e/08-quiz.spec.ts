@@ -94,6 +94,22 @@ test.describe("Quiz", () => {
     await expect(page.getByRole("heading", { name: "Liderlik tablosu" })).toBeVisible();
     await expect(page.getByText("Deniz K.")).toBeVisible();
     await expect(page.getByText("Deniz Kaya")).toHaveCount(0);
+    await expect(page.getByText("Quize katılmak için okutun")).toHaveCount(0);
+
+    // Ortak cihaz: "Sonraki katılımcı" ile aynı cihazda yeni kişi başlar; önceki sonuç kayıtlı kalır
+    await page.goto("/quiz");
+    await page.getByRole("button", { name: "Sonraki katılımcı" }).click();
+    await page.getByLabel("Ad Soyad").fill("Ece Arslan");
+    await page.getByRole("button", { name: "Quize başla" }).click();
+    await answer(page, 0, KEY[0]);
+    // Yarıda bırakılan deneme cihazı kilitlemez
+    page.once("dialog", (d) => d.accept());
+    await page.getByRole("button", { name: "Katılımcı değiştir" }).click();
+    await expect(page.getByLabel("Ad Soyad")).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel("Ad Soyad")).toBeVisible();
+    const { data: all } = await service().from("quiz_attempts").select("full_name, finished_at").order("started_at");
+    expect(all!.map((r) => [r.full_name, Boolean(r.finished_at)])).toEqual([["Deniz Kaya", true], ["Ece Arslan", false]]);
   });
 
   test("liderlik: önce doğru sayısı, sonra süre; ilk 15 hediye bölümünde, canlı güncellenir", async ({ page }) => {
