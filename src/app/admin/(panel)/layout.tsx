@@ -11,6 +11,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
     staff.role === "admin"
       ? [
           { href: "/admin", label: "Başvurular" },
+          { href: "/admin/toplu-onay", label: "Toplu onay" },
           { href: "/admin/check-in", label: "Check-in" },
           { href: "/admin/ayarlar", label: "Etkinlik ayarları" },
         ]
