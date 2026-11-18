@@ -444,4 +444,68 @@ set role anon;
 select tests.expect_error($$select * from public.admin_reminder_targets('20261120')$$, 'permission denied|ERR_FORBIDDEN', 'anonim kullanıcı hatırlatma listesini göremez');
 reset role;
 
+\echo '--- 22. Quiz: yazma yetkisi, tek tamamlama, sıralama, admin işlemleri'
+set role anon;
+select tests.expect_error($$insert into public.quiz_attempts (full_name) values ('Sahte Kişi')$$, 'permission denied', 'anonim kullanıcı quiz denemesi yazamaz');
+select tests.expect_error($$select * from public.quiz_start('Anonim Kişi')$$, 'permission denied', 'anonim kullanıcı quiz_start çağıramaz');
+select tests.expect_error($$select * from public.quiz_leaderboard(10)$$, 'permission denied', 'anonim kullanıcı liderlik fonksiyonunu doğrudan çağıramaz');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error($$select * from public.quiz_finish(gen_random_uuid(), 1, 2, '[]'::jsonb)$$, 'permission denied', 'oturumlu kullanıcı quiz_finish çağıramaz');
+select tests.expect_error($$select public.admin_quiz_set_open(true)$$, 'ERR_FORBIDDEN', 'kapı ekibi quizi açamaz');
+select tests.ok((select count(*) = 0 from public.quiz_attempts), 'kapı ekibi quiz denemelerini göremez');
+reset role;
+
+set role service_role;
+select tests.expect_error($$select * from public.quiz_start('Erken Gelen')$$, 'ERR_QUIZ_CLOSED', 'quiz kapalıyken başlanamaz');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok(public.admin_quiz_set_open(true), 'admin quizi açar');
+reset role;
+
+set role service_role;
+select tests.expect_error($$select * from public.quiz_start('  a ')$$, 'ERR_BAD_REQUEST', 'çok kısa ad reddedilir');
+select attempt_id from public.quiz_start('  Ayşe   Yılmaz ');
+select tests.ok((select count(*) = 1 from public.quiz_attempts where full_name = 'Ayşe Yılmaz' and finished_at is null),
+                'ad boşlukları temizlenerek kaydedilir');
+reset role;
+-- Sıralama için başlangıç zamanlarını sabitle (süre DB saatinden hesaplanır)
+insert into public.quiz_attempts (id, full_name, started_at) values
+  ('10000000-0000-0000-0000-000000000001', 'Hızlı Az', now() - interval '60 seconds'),
+  ('10000000-0000-0000-0000-000000000002', 'Yavaş Çok', now() - interval '300 seconds'),
+  ('10000000-0000-0000-0000-000000000003', 'Hızlı Çok', now() - interval '120 seconds');
+set role service_role;
+select tests.ok((select not already and correct_count = 10 and duration_ms between 59000 and 70000
+                   from public.quiz_finish('10000000-0000-0000-0000-000000000001', 10, 26, '[]'::jsonb)),
+                'süre sunucu saatinden hesaplanır');
+select public.quiz_finish('10000000-0000-0000-0000-000000000002', 20, 26, '[]'::jsonb);
+select tests.ok((select rank = 1 from public.quiz_finish('10000000-0000-0000-0000-000000000003', 20, 26, '[]'::jsonb)),
+                'eşit doğruda kısa süren öne geçer');
+select tests.ok((select already and correct_count = 20 from public.quiz_finish('10000000-0000-0000-0000-000000000003', 26, 26, '[]'::jsonb)),
+                'tamamlanmış deneme ikinci kez puanlanamaz');
+select tests.ok((select string_agg(full_name, ',' order by rank) = 'Hızlı Çok,Yavaş Çok,Hızlı Az'
+                   from public.quiz_leaderboard(10)), 'liderlik: önce doğru sayısı, sonra süre');
+select tests.ok((select count(*) = 3 from public.quiz_leaderboard(10)), 'tamamlanmamış denemeler liderlikte yok');
+select tests.expect_error($$select * from public.quiz_finish('10000000-0000-0000-0000-000000000001', 27, 26, '[]'::jsonb)$$, 'ERR_BAD_REQUEST', 'toplamdan fazla doğru reddedilir');
+select tests.expect_error($$select * from public.quiz_finish(gen_random_uuid(), 1, 26, '[]'::jsonb)$$, 'ERR_NOT_FOUND', 'olmayan deneme reddedilir');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok((select count(*) = 4 from public.quiz_attempts), 'admin tüm denemeleri görür');
+select tests.ok(public.admin_quiz_delete_attempt('10000000-0000-0000-0000-000000000003'), 'admin tek denemeyi siler');
+select public.admin_quiz_set_open(false);
+reset role;
+set role service_role;
+select tests.ok((select string_agg(full_name, ',' order by rank) = 'Yavaş Çok,Hızlı Az' from public.quiz_leaderboard(10)), 'silinen deneme sıradan çıkar');
+select tests.expect_error($$select * from public.quiz_finish((select id from public.quiz_attempts where full_name = 'Ayşe Yılmaz'), 5, 26, '[]'::jsonb)$$, 'ERR_QUIZ_CLOSED', 'quiz kapanınca cevap gönderilemez');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok(public.admin_quiz_reset() = 3, 'admin tüm denemeleri sıfırlar');
+reset role;
+select tests.ok((select count(*) = 0 from public.quiz_attempts), 'sıfırlamadan sonra deneme kalmaz');
+select tests.ok((select count(*) = 4 from public.admin_audit_logs where action like 'quiz\_%'), 'quiz admin işlemleri denetim kaydına yazılır');
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

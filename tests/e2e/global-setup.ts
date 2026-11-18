@@ -10,7 +10,7 @@ export default async function globalSetup() {
   const url = env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   if (url && !/127\.0\.0\.1|localhost/.test(url)) throw new Error("E2E testleri yalnızca yerel Supabase'e karşı çalışır.");
 
-  for (const table of ["email_logs", "invitations", "admin_audit_logs", "applications", "rate_limits"]) {
+  for (const table of ["email_logs", "invitations", "admin_audit_logs", "applications", "rate_limits", "quiz_attempts"]) {
     const col = table === "rate_limits" ? "key" : "id";
     const { error } = await db.from(table).delete().not(col, "is", null);
     if (error) throw new Error(`${table} temizlenemedi: ${error.message}`);
@@ -30,6 +30,7 @@ export default async function globalSetup() {
       transport_info: null,
     })
     .eq("id", 1);
+  await db.from("quiz_settings").update({ is_open: false }).eq("id", 1);
 
   const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 });
   for (const u of list?.users ?? []) await db.auth.admin.deleteUser(u.id);

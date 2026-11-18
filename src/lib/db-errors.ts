@@ -6,6 +6,7 @@ const MESSAGES: Record<string, string> = {
   ERR_CAPACITY_FULL: "Kapasite dolu. Başvuruyu yedek listeye alabilir veya ayarlardan kapasiteyi artırabilirsin.",
   ERR_APPLICATIONS_CLOSED: "Başvurular şu anda kapalı.",
   ERR_BAD_REQUEST: "Geçersiz istek.",
+  ERR_QUIZ_CLOSED: "Quiz şu anda kapalı.",
 };
 
 export function dbErrorCode(error: { message?: string } | null | undefined): string | null {
