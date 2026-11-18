@@ -31,6 +31,9 @@ export default async function globalSetup() {
     })
     .eq("id", 1);
   await db.from("quiz_settings").update({ is_open: false }).eq("id", 1);
+  await db.from("stage_questions").update({ status: "archived", merged_into: null }).not("id", "is", null);
+  await db.from("stage_questions").delete().not("id", "is", null);
+  await db.from("stage_settings").update({ is_open: true }).eq("id", 1);
 
   const { data: list } = await db.auth.admin.listUsers({ perPage: 1000 });
   for (const u of list?.users ?? []) await db.auth.admin.deleteUser(u.id);

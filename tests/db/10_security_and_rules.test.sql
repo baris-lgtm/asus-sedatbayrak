@@ -508,4 +508,56 @@ reset role;
 select tests.ok((select count(*) = 0 from public.quiz_attempts), 'sıfırlamadan sonra deneme kalmaz');
 select tests.ok((select count(*) = 4 from public.admin_audit_logs where action like 'quiz\_%'), 'quiz admin işlemleri denetim kaydına yazılır');
 
+
+\echo '--- 23. Sahneye soru: yazma yetkisi, birleştirme, durumlar'
+set role anon;
+select tests.expect_error($$insert into public.stage_questions (body) values ('Sahte soru')$$, 'permission denied', 'anonim kullanıcı soruyu doğrudan yazamaz');
+select tests.expect_error($$select public.stage_submit(null, 'Anonim soru')$$, 'permission denied', 'anonim kullanıcı stage_submit çağıramaz');
+reset role;
+set role service_role;
+select public.stage_submit('  Ayşe  ', 'Yapay zekâ sunum sürecini nasıl değiştirecek?');
+select public.stage_submit(null, 'Yapay zeka sunumları nasıl değiştirir?');
+select public.stage_submit('', 'AI sunumda ne değiştirir?');
+select public.stage_submit('Mert', 'ProArt P16 hangi yazılımlarla test edildi?');
+select tests.ok((select count(*) = 1 from public.stage_questions where author_name = 'Ayşe'), 'ad boşlukları temizlenir');
+select tests.ok((select count(*) = 2 from public.stage_questions where author_name is null), 'boş ad null kaydedilir');
+select tests.ok((select bool_and(status = 'new') from public.stage_questions), 'yeni sorular "new" durumunda');
+select tests.expect_error($$select public.stage_submit(null, 'a')$$, 'ERR_BAD_REQUEST', 'çok kısa soru reddedilir');
+select tests.expect_error($$select public.stage_submit(repeat('x', 61), 'Uzun adlı soru')$$, 'ERR_BAD_REQUEST', 'çok uzun ad reddedilir');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.ok((select count(*) = 0 from public.stage_questions), 'kapı ekibi soruları göremez');
+select tests.expect_error($$select public.admin_stage_set_open(false)$$, 'ERR_FORBIDDEN', 'kapı ekibi soru alımını kapatamaz');
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok((select count(*) = 4 from public.stage_questions), 'admin soruları görür');
+select tests.ok(public.admin_stage_merge(
+  (select id from public.stage_questions where author_name = 'Ayşe'),
+  array(select id from public.stage_questions where body like '%sunum%' and author_name is distinct from 'Ayşe')) = 2,
+  'tekrar eden iki soru birleştirilir');
+select tests.ok((select count(*) = 2 from public.stage_questions where status = 'merged'
+                   and merged_into = (select id from public.stage_questions where author_name = 'Ayşe')), 'birleştirilenler hedefe bağlı');
+select tests.expect_error($$select public.admin_stage_merge((select id from public.stage_questions where status = 'merged' limit 1),
+                           array[(select id from public.stage_questions where author_name = 'Mert')])$$, 'ERR_NOT_FOUND', 'birleştirilmiş soru hedef olamaz');
+-- Hedef başka bir soruya birleştirilirse onun altındakiler de yeni hedefe taşınır
+select public.admin_stage_merge((select id from public.stage_questions where author_name = 'Mert'),
+                                array[(select id from public.stage_questions where author_name = 'Ayşe')]);
+select tests.ok((select count(*) = 3 from public.stage_questions
+                   where merged_into = (select id from public.stage_questions where author_name = 'Mert')), 'zincir birleştirme tek hedefte toplanır');
+select tests.ok(public.admin_stage_set_status(array(select id from public.stage_questions where author_name = 'Ayşe'), 'new') = 1, 'birleştirmeden çıkarılır');
+select tests.ok((select status = 'new' and merged_into is null from public.stage_questions where author_name = 'Ayşe'), 'çıkarılan soru yeniden "new"');
+select tests.expect_error($$select public.admin_stage_set_status(array[gen_random_uuid()], 'merged')$$, 'ERR_BAD_REQUEST', 'merged durumu doğrudan verilemez');
+select tests.ok(public.admin_stage_set_status(array(select id from public.stage_questions where author_name = 'Mert'), 'selected') = 1, 'soru moderatöre iletilir');
+select tests.ok(public.admin_stage_update_body((select id from public.stage_questions where author_name = 'Mert'), 'Birleştirilmiş soru metni'), 'admin metni düzenler');
+select public.admin_stage_set_open(false);
+reset role;
+set role service_role;
+select tests.expect_error($$select public.stage_submit(null, 'Kapalıyken soru')$$, 'ERR_STAGE_CLOSED', 'soru alımı kapalıyken gönderilemez');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select public.admin_stage_set_open(true);
+select tests.ok(public.admin_stage_reset() = 4, 'admin tüm soruları siler (birleştirilmişler dahil)');
+reset role;
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

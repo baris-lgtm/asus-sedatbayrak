@@ -7,6 +7,7 @@ export const NAV = [
   { href: "/#program", label: "Program" },
   { href: "/#konusmacilar", label: "Konuşmacılar" },
   { href: "/#proart", label: "ProArt P16" },
+  { href: "/soru", label: "Soru Sor" },
 ];
 
 export function SiteHeader({ showNav = true }: { showNav?: boolean }) {

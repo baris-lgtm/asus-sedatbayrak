@@ -2,9 +2,9 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { quizQuestions } from "@/content/quiz";
 import { cookies } from "next/headers";
-import type { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireEnv, siteUrl } from "@/lib/env";
+import { requireEnv } from "@/lib/env";
+export { sameOrigin } from "@/lib/server/same-origin";
 import { maskName } from "@/lib/quiz-format";
 
 /** Bu cihazın quiz denemesi: "<attempt uuid>.<hmac>" — httpOnly çerez. */
@@ -47,17 +47,6 @@ export function scoreAnswers(answers: unknown): { correct: number; total: number
   return { correct: detail.filter((d) => d.correct).length, total: quizQuestions.length, detail };
 }
 
-
-export function sameOrigin(req: NextRequest): boolean {
-  const origin = req.headers.get("origin");
-  if (!origin) return false;
-  try {
-    const o = new URL(origin).host;
-    return o === req.nextUrl.host || o === new URL(siteUrl()).host;
-  } catch {
-    return false;
-  }
-}
 
 export interface QuizResult {
   correct: number;

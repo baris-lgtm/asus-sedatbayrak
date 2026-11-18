@@ -8,6 +8,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { BackgroundVideo, ProductVideo } from "@/components/hero-video";
 import { ArrowRight, ProgramMark } from "@/components/brand";
 import { FreeBadge } from "@/components/free-badge";
+import QRCode from "qrcode";
+import { siteUrl } from "@/lib/env";
 
 // Etkinlik ayarları admin panelinden değişir; sayfa en geç 60 sn'de güncellenir
 // (ayar kaydında ayrıca anında yenilenir).
@@ -62,6 +64,12 @@ function SpeakerNames({ ids, light = false }: { ids: readonly SpeakerId[]; light
 
 export default async function HomePage() {
   const settings = await getEventSettings();
+  const questionQr = await QRCode.toString(`${siteUrl()}/soru`, {
+    type: "svg",
+    errorCorrectionLevel: "M",
+    margin: 0,
+    color: { dark: "#efe9e0", light: "#00000000" },
+  });
   const dateLong = formatEventDate(settings);
   const dateShort = formatEventDateShort(settings);
   // Saat ve mekân herkese açık sayfada gösterilmez; yalnızca onaylı katılımcıların davetiye e-postasında yer alır.
@@ -272,6 +280,32 @@ export default async function HomePage() {
                 </li>
               ))}
             </ul>
+          </div>
+        </section>
+
+        {/* SAHNEYE SORU */}
+        <section id="soru-sor" aria-labelledby="soru-baslik" className="scroll-mt-16 border-y border-white/10">
+          <div className="mx-auto grid max-w-7xl items-center gap-8 px-5 py-14 sm:px-8 sm:py-16 md:grid-cols-12 md:gap-10 lg:py-20">
+            <div className="md:col-span-7 lg:col-span-6">
+              <Eyebrow>Soru-cevap</Eyebrow>
+              <h2 id="soru-baslik" className="headline mt-6 text-[clamp(2.1rem,3.8vw,3rem)]">
+                Sahneye Soru Sor
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] leading-[1.7] text-white/70">
+                Konuşmacılarımıza sormak istediğiniz soruyu gönderin. Moderatör, seçilen soruları soru-cevap bölümünde
+                sahneye iletecek.
+              </p>
+              <a href="/soru" className="btn-copper arrow-nudge mt-8 w-full sm:w-auto">
+                Sorunu Gönder
+                <ArrowRight />
+              </a>
+            </div>
+            <div className="hidden md:col-span-5 md:flex md:justify-end lg:col-span-4 lg:col-start-9">
+              <figure className="w-full max-w-[15rem] rounded-[4px] border border-white/10 bg-night-2 p-6 text-center">
+                <div className="mx-auto w-full max-w-[10.5rem]" aria-hidden dangerouslySetInnerHTML={{ __html: questionQr }} />
+                <figcaption className="mt-4 text-[13px] text-white/60">Telefonunuzla okutun</figcaption>
+              </figure>
+            </div>
           </div>
         </section>
 
