@@ -1,4 +1,6 @@
 import "server-only";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import QRCode from "qrcode";
 import { requireEnv, siteUrl } from "@/lib/env";
 import { getEventSettingsStrict } from "@/lib/event-settings";
@@ -6,7 +8,7 @@ import { formatManualCode, invitationUrl, materialFor } from "@/lib/server/invit
 import type { Application, EmailType } from "@/lib/types";
 import { sendTransactional, type InlineAttachment, type SendOutcome } from "./send";
 import type { EmailContent } from "./templates";
-import { applicationReceivedEmail, invitationEmail, statusEmail } from "./templates";
+import { REGRET_OFFER, applicationReceivedEmail, invitationEmail, regretEmail, statusEmail } from "./templates";
 
 type Recipient = Pick<Application, "id" | "first_name" | "email">;
 
@@ -27,8 +29,10 @@ export async function buildEmail(
   switch (type) {
     case "application_received":
       return { content: applicationReceivedEmail(app.first_name, settings) };
-    case "waitlisted":
     case "rejected":
+      // 19 Kasım: tüm ret e-postaları "katılamayanlar + ProArt indirimi" tasarımıyla gider.
+      return { content: regretEmail(), attachments: await regretImages() };
+    case "waitlisted":
     case "cancelled":
       return { content: statusEmail(type, app.first_name, settings) };
     case "invitation":
@@ -53,6 +57,45 @@ export async function buildEmail(
       };
     }
   }
+}
+
+/** public/email görselini okur; sunucusuz ortamda dosya pakette yoksa sitenin kendisinden indirir. */
+async function loadPublicEmailImage(file: string): Promise<Buffer> {
+  try {
+    return await readFile(path.join(process.cwd(), "public", "email", file));
+  } catch {
+    const res = await fetch(`${siteUrl()}/email/${file}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("E-posta görseli yüklenemedi");
+    return Buffer.from(await res.arrayBuffer());
+  }
+}
+
+/** Ret + indirim e-postasının tasarım önizlemesi (test gönderimi için). */
+export async function regretPreview() {
+  return { content: regretEmail(), attachments: await regretImages() };
+}
+
+let regretImageCache: InlineAttachment[] | null = null;
+async function regretImages(): Promise<InlineAttachment[]> {
+  if (!regretImageCache) {
+    regretImageCache = await Promise.all(
+      REGRET_OFFER.products.map(async (p) => ({
+        filename: p.file,
+        content: await loadPublicEmailImage(p.file),
+        contentType: "image/jpeg",
+        contentId: p.cid,
+      })),
+    );
+  }
+  return regretImageCache;
+}
+
+/**
+ * Katılamayanlara ret + indirim e-postası. dedupe "regret:<başvuru>" → kişi başı tek e-posta
+ * (daha önce eski ret metnini almış olanlar da bu e-postayı bir kez alır).
+ */
+export function sendRegret(app: Recipient): Promise<SendOutcome> {
+  return send(app, "rejected", `regret:${app.id}`);
 }
 
 function send(app: Recipient, type: EmailType, dedupeKey: string, invitationId: string | null = null) {

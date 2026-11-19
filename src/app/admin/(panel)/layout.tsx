@@ -13,6 +13,7 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           { href: "/admin", label: "Başvurular" },
           { href: "/admin/toplu-onay", label: "Toplu onay" },
           { href: "/admin/check-in", label: "Check-in" },
+          { href: "/admin/toplu-ret", label: "Katılamayanlar" },
           { href: "/admin/sorular", label: "Sahne soruları" },
           { href: "/admin/quiz", label: "Quiz" },
           { href: "/admin/ayarlar", label: "Etkinlik ayarları" },

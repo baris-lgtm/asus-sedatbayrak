@@ -12,6 +12,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Ret e-postasındaki ürün görselleri sunucu tarafında ek olarak gömülür.
+  outputFileTracingIncludes: { "/**": ["./public/email/**"] },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

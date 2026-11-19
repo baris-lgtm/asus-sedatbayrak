@@ -171,3 +171,38 @@ export function describeOutcome(o: SendOutcome): string {
       return "E-posta gönderilemedi; başvurunun detayından tekrar deneyebilirsin.";
   }
 }
+
+/**
+ * Önizleme / test e-postası: başvuruya bağlı değildir, email_logs'a yazılmaz, dedupe yoktur.
+ * Yalnızca admin'in kendi adresine tasarımı kontrol etmesi için kullanılır.
+ */
+export async function sendPreviewEmail(to: string, content: EmailContent, attachments?: InlineAttachment[]): Promise<SendOutcome> {
+  const subject = `[TEST] ${content.subject}`;
+  const sink = testSinkDir();
+  if (sink) {
+    const id = `test-sink:${randomUUID()}`;
+    await mkdir(sink, { recursive: true });
+    await writeFile(
+      path.join(sink, `${Date.now()}-preview-${randomUUID()}.json`),
+      JSON.stringify({ id, to, type: "preview", subject, text: content.text, attachments: (attachments ?? []).map((a) => ({ filename: a.filename, contentId: a.contentId, bytes: a.content.length })) }),
+    );
+    return { status: "sent", providerId: id };
+  }
+  if (!isEmailConfigured()) return { status: "not_configured" };
+  try {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const { data, error } = await resend.emails.send({
+      from: process.env.EMAIL_FROM as string,
+      to,
+      replyTo: process.env.EMAIL_REPLY_TO || undefined,
+      subject,
+      html: content.html,
+      text: content.text,
+      attachments: attachments?.map((a) => ({ filename: a.filename, content: a.content, contentType: a.contentType, contentId: a.contentId })),
+    });
+    if (error || !data?.id) return { status: "failed", error: (error?.message ?? "Sağlayıcı yanıt vermedi").slice(0, 300) };
+    return { status: "sent", providerId: data.id };
+  } catch {
+    return { status: "failed", error: "E-posta sağlayıcısına ulaşılamadı." };
+  }
+}

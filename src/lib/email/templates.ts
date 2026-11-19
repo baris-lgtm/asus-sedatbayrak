@@ -185,3 +185,111 @@ export function statusEmail(kind: "waitlisted" | "rejected" | "cancelled", first
     text: `Merhaba ${firstName},\n\n${copy.body}\n\nSaygılarımızla,\nASUS Türkiye`,
   };
 }
+
+/**
+ * Katılamayan başvuru sahiplerine: ret + ProArt indirim duyurusu (19 Kasım tasarımı).
+ * Metin ve kampanya bilgileri ASUS'un onayladığı tasarımdan birebir alınmıştır;
+ * değiştirmeden önce onay alın. Görseller CID ekleri olarak gömülür (bkz. notifications).
+ */
+export const REGRET_OFFER = {
+  heading: "ASUS ProArt Mimarlığın Evrimi",
+  discount: "%10 İNDİRİM",
+  scope: "Tüm ASUS ProArt notebook modellerinde",
+  store: "Vatan Bilgisayar online mağazasında geçerli",
+  deadline: "Son kullanım tarihi 30.11.2026",
+  ctaLabel: "ProArt modellerini inceleyin",
+  ctaUrl: "https://www.asus.com/tr/content/proart-laptop/",
+  products: [
+    { name: "ProArt PZ14", cid: "proart-pz14", file: "proart-pz14-v1.jpg" },
+    { name: "ProArt P16", cid: "proart-p16", file: "proart-p16-v1.jpg" },
+    { name: "ProArt PX13", cid: "proart-px13", file: "proart-px13-v1.jpg" },
+  ],
+} as const;
+
+export function regretEmail(): EmailContent {
+  const o = REGRET_OFFER;
+  const F = "font-family:Arial,Helvetica,sans-serif;";
+  const para = (t: string) => `<p style="margin:0 0 12px;">${t}</p>`;
+  const products = o.products
+    .map(
+      (pr) => `<td class="pcell" width="33%" valign="top" style="padding:0 5px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E3E3E3;border-radius:6px;">
+<tr><td align="center" style="padding:14px 8px 6px;"><img src="cid:${pr.cid}" width="160" alt="${pr.name}" style="display:block;width:100%;max-width:160px;height:auto;border:0;"></td></tr>
+<tr><td align="center" style="${F}padding:4px 6px 14px;font-size:15px;font-weight:700;color:#000;">${pr.name}</td></tr>
+</table></td>`,
+    )
+    .join("");
+
+  const html = `<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light"><title>Başvurunuz için teşekkür ederiz</title>
+<style>@media (max-width:480px){.pcell{display:block!important;width:100%!important;padding:0 0 10px!important}.px{padding-left:20px!important;padding-right:20px!important}.big{font-size:40px!important}}</style>
+</head>
+<body style="margin:0;padding:0;background:#F2F2F2;">
+<span style="display:none!important;opacity:0;color:transparent;height:0;width:0;overflow:hidden;">Tüm ASUS ProArt notebook modellerinde %10 indirim — son kullanım 30.11.2026</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F2F2;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;">
+<tr><td class="px" style="background:#000;padding:22px 32px;${F}font-size:22px;font-weight:700;color:#FFF;">${o.heading}</td></tr>
+<tr><td class="px" style="padding:28px 32px 8px;${F}font-size:16px;line-height:1.5;color:#000;">
+<h1 style="margin:0 0 14px;font-size:26px;line-height:1.2;font-weight:700;">Başvurunuz için teşekkür ederiz</h1>
+${para("Merhaba,")}
+${para("ASUS ProArt Mimarlığın Evrimi etkinliğimize gösterdiğiniz ilgi ve başvurunuz için teşekkür ederiz.")}
+${para("Yoğun talep ve mekânımızın sınırlı kontenjanı nedeniyle bu buluşmada size yer ayıramadık. Bir sonraki ASUS ProArt Mimarlığın Evrimi etkinliğinde başvurunuza öncelik vereceğiz.")}
+</td></tr>
+<tr><td class="px" style="padding:8px 32px 20px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#EDEDED;border-top:1px solid #DADADA;">
+<tr><td align="center" style="padding:22px 16px;${F}color:#000;">
+<div class="big" style="font-size:52px;line-height:1.05;font-weight:800;letter-spacing:-0.01em;">${o.discount}</div>
+<div style="margin-top:8px;font-size:20px;font-weight:700;">${o.scope}</div>
+<div style="margin-top:4px;font-size:16px;">${o.store}</div>
+<div style="margin-top:6px;font-size:16px;">${o.deadline}</div>
+</td></tr></table>
+</td></tr>
+<tr><td style="padding:0 27px 20px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${products}</tr></table></td></tr>
+<tr><td class="px" style="padding:0 32px 22px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:2px solid #000;border-radius:4px;">
+<tr><td style="padding:18px 22px;${F}font-size:15px;line-height:1.5;color:#000;">
+<div style="font-size:22px;font-weight:800;text-align:center;margin:0 0 10px;">İndirim kodunuzu nasıl alırsınız?</div>
+${para("Satın almak isterseniz bu e-postayı yanıtlayarak indirim kodunuzu talep edebilirsiniz. Kodunuzu e-posta ile ileteceğiz.")}
+<p style="margin:0;">Kodu, vatanbilgisayar.com’da ödeme adımındaki ‘İndirim Kodu / Hediye Çeki’ alanına girerek kullanabilirsiniz.</p>
+</td></tr></table>
+</td></tr>
+<tr><td align="center" class="px" style="padding:0 32px 26px;">
+<a href="${o.ctaUrl}" style="display:inline-block;background:#000;color:#FFF;${F}font-size:18px;font-weight:700;text-decoration:none;padding:14px 40px;">${o.ctaLabel}</a>
+</td></tr>
+<tr><td class="px" style="padding:18px 32px 26px;border-top:1px solid #DADADA;${F}font-size:15px;line-height:1.55;color:#000;">
+Anlayışınız ve ilginiz için teşekkür ederiz.<br>Saygılarımızla,<br>ASUS Türkiye
+</td></tr>
+<tr><td class="px" style="padding:16px 32px;border-top:1px solid #DADADA;${F}font-size:12px;line-height:1.5;color:#4A4A4A;">
+Bu e-postayı ASUS ProArt Mimarlığın Evrimi başvurunuz nedeniyle aldınız. Kişisel verileriniz KVKK Aydınlatma Metni kapsamında işlenir.
+</td></tr>
+</table></td></tr></table></body></html>`;
+
+  const text = `ASUS ProArt Mimarlığın Evrimi
+
+Başvurunuz için teşekkür ederiz
+
+Merhaba,
+
+ASUS ProArt Mimarlığın Evrimi etkinliğimize gösterdiğiniz ilgi ve başvurunuz için teşekkür ederiz.
+
+Yoğun talep ve mekânımızın sınırlı kontenjanı nedeniyle bu buluşmada size yer ayıramadık. Bir sonraki ASUS ProArt Mimarlığın Evrimi etkinliğinde başvurunuza öncelik vereceğiz.
+
+${o.discount}
+${o.scope}
+${o.store}
+${o.deadline}
+
+İndirim kodunuzu nasıl alırsınız?
+Satın almak isterseniz bu e-postayı yanıtlayarak indirim kodunuzu talep edebilirsiniz. Kodunuzu e-posta ile ileteceğiz.
+Kodu, vatanbilgisayar.com’da ödeme adımındaki ‘İndirim Kodu / Hediye Çeki’ alanına girerek kullanabilirsiniz.
+
+${o.ctaLabel}: ${o.ctaUrl}
+
+Anlayışınız ve ilginiz için teşekkür ederiz.
+Saygılarımızla,
+ASUS Türkiye`;
+
+  return { subject: "ASUS ProArt Mimarlığın Evrimi — Başvurunuz için teşekkür ederiz", html, text };
+}
