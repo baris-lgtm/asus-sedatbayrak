@@ -7,6 +7,7 @@ import { EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, STATUS_LABELS, type Application,
 import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
 import { ActionFeedbackProvider, ActionForm } from "@/components/admin/action-form";
 import { DeleteApplicationForm } from "@/components/admin/delete-form";
+import { ContactEdit } from "@/components/admin/contact-edit";
 import {
   approveAction,
   reissueInvitationAction,
@@ -24,6 +25,8 @@ const ACTION_LABELS: Record<string, string> = {
   approve: "Onaylandı",
   reissue_invitation: "Davetiye yeniden oluşturuldu",
   resend_invitation: "Davetiye tekrar gönderildi",
+  update_contact: "İletişim bilgileri düzeltildi",
+  resend_after_contact_fix: "Düzeltilen adrese e-posta tekrar gönderildi",
   check_in: "Giriş yapıldı",
   export_csv: "CSV indirildi",
 };
@@ -132,6 +135,9 @@ export default async function ApplicationDetail({
                 <p className="mt-1 whitespace-pre-line">{app.additional_answers?.[f.id] || "—"}</p>
               </div>
             ))}
+            {s !== "cancelled" && (
+              <ContactEdit id={id} firstName={app.first_name} lastName={app.last_name} email={app.email} phone={app.phone} status={s} />
+            )}
           </section>
 
           <section aria-labelledby="davetiye" className="border border-rule bg-paper p-5">

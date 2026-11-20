@@ -98,6 +98,12 @@ export function sendRegret(app: Recipient): Promise<SendOutcome> {
   return send(app, "rejected", `regret:${app.id}`);
 }
 
+/** E-posta adresi düzeltildikten sonra ret + indirim e-postasını yeni adrese tekrar gönderir. */
+export function resendRegret(app: Recipient): Promise<SendOutcome> {
+  const minute = new Date().toISOString().slice(0, 16);
+  return send(app, "rejected", `regret_resend:${app.id}:${minute}`);
+}
+
 function send(app: Recipient, type: EmailType, dedupeKey: string, invitationId: string | null = null) {
   return sendTransactional({
     applicationId: app.id,

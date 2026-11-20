@@ -14,7 +14,8 @@ import { dbErrorMessage } from "@/lib/db-errors";
 import { requireEnv, ConfigError } from "@/lib/env";
 import { issueInvitation } from "@/lib/server/invitation-token";
 import { describeOutcome, type SendOutcome } from "@/lib/email/send";
-import { retryLoggedEmail, sendEventUpdate, sendInvitation, sendReminder, sendStatusNotice } from "@/lib/email/notifications";
+import { resendRegret, retryLoggedEmail, sendEventUpdate, sendInvitation, sendReminder, sendStatusNotice } from "@/lib/email/notifications";
+import { normalizePhone } from "@/lib/phone";
 import { MAX_UPDATE_ATTEMPTS, eventInfoVersion, eventUpdateTargets, reminderRound, reminderTargets } from "@/lib/admin/event-update";
 import { getEventSettingsStrict } from "@/lib/event-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -463,6 +464,77 @@ export async function sendRemindersAction(_prev: ActionState, _formData: FormDat
     else if (after.stuck > 0) parts.push(`${after.stuck} kişiye ulaşılamadı; "Başarısız e-postaları göster" ile kontrol et.`);
     else parts.push("Bugünün hatırlatması tüm onaylı katılımcılara gönderildi.");
     return { ok: failed === 0, message: parts.join(" ") };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+const contactSchema = z.object({
+  id: uuid,
+  first_name: z.string().trim().min(1, "Ad boş olamaz.").max(80),
+  last_name: z.string().trim().min(1, "Soyad boş olamaz.").max(80),
+  email: z.email("Geçerli bir e-posta adresi yaz.").max(254),
+  phone: z.string().trim().min(1, "Telefon boş olamaz."),
+  resend: z.enum(["on"]).optional(),
+});
+
+/**
+ * Katılımcının yanlış girdiği iletişim bilgilerini düzeltir; istenirse son durum e-postasını
+ * (onaylıysa QR davetiye, reddedildiyse "katılamayanlar" e-postası) yeni adrese tekrar gönderir.
+ */
+export async function updateContactAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const admin = await requireAdmin();
+    const parsed = contactSchema.safeParse({
+      id: formData.get("id"),
+      first_name: formData.get("first_name") ?? "",
+      last_name: formData.get("last_name") ?? "",
+      email: String(formData.get("email") ?? "").trim(),
+      phone: formData.get("phone") ?? "",
+      resend: formData.get("resend") ?? undefined,
+    });
+    if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Bilgileri kontrol et." };
+    const phone = normalizePhone(parsed.data.phone);
+    if (!phone) return { ok: false, message: "Telefon numarası geçersiz (ör. 0555 111 22 33)." };
+
+    const { data, error } = await admin.supabase.rpc("admin_update_contact", {
+      p_application_id: parsed.data.id,
+      p_first_name: parsed.data.first_name,
+      p_last_name: parsed.data.last_name,
+      p_email: parsed.data.email,
+      p_phone: phone,
+    });
+    if (error) return { ok: false, message: dbErrorMessage(error) };
+    const r = data as { changed: string[]; email_changed: boolean; status: string };
+    revalidatePath("/admin", "layout");
+    const saved = r.changed.length ? "Bilgiler güncellendi." : "Değişiklik yok.";
+
+    if (!parsed.data.resend) return { ok: true, message: saved };
+    const app = await loadApplication(parsed.data.id);
+    if (!app) return { ok: false, message: `${saved} Ancak e-posta gönderilemedi; sayfayı yenileyip tekrar dene.` };
+
+    let outcome: SendOutcome | null = null;
+    if (app.status === "approved") {
+      const invitationId = await activeInvitationId(admin, app.id);
+      if (!invitationId) return { ok: false, message: `${saved} Aktif davetiye bulunamadı; "Davetiye oluştur ve gönder" ile oluştur.` };
+      outcome = await sendInvitation(app, invitationId, "resend");
+    } else if (app.status === "rejected") {
+      outcome = await resendRegret(app);
+    } else {
+      return { ok: true, message: `${saved} Bu başvuru henüz sonuçlanmadığı için gönderilecek bir e-posta yok.` };
+    }
+    await createAdminClient().from("admin_audit_logs").insert({
+      admin_user_id: admin.userId,
+      action: "resend_after_contact_fix",
+      application_id: app.id,
+      metadata: { outcome: outcome.status },
+    });
+    if (outcome.status === "duplicate") return { ok: true, message: `${saved} E-posta az önce gönderildi; bir dakika sonra tekrar deneyebilirsin.` };
+    const what = app.status === "approved" ? "Davetiye" : "Bilgilendirme e-postası";
+    return {
+      ok: outcome.status === "sent",
+      message: outcome.status === "sent" ? `${saved} ${what} ${app.email} adresine gönderildi.` : `${saved} ${describeOutcome(outcome)}`,
+    };
   } catch (e) {
     return fail(e);
   }

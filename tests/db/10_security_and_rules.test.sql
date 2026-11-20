@@ -560,4 +560,25 @@ select public.admin_stage_set_open(true);
 select tests.ok(public.admin_stage_reset() = 4, 'admin tüm soruları siler (birleştirilmişler dahil)');
 reset role;
 
+
+\echo '--- 24. Admin iletişim bilgisi düzeltme'
+insert into public.applications (id, first_name, last_name, email, phone, participant_type, kvkk_notice_version)
+values ('20000000-0000-0000-0000-000000000001', 'Yanlış', 'Kişi', 'yanlis@gmial.com', '5551112233', 'professional', 'v1'),
+       ('20000000-0000-0000-0000-000000000002', 'Başka', 'Kişi', 'baska@example.com', '5551112244', 'professional', 'v1');
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error($$select public.admin_update_contact('20000000-0000-0000-0000-000000000001', 'A', 'B', 'dogru@gmail.com', '5551112233')$$, 'ERR_FORBIDDEN', 'kapı ekibi iletişim bilgisi düzeltemez');
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok((select (r->>'email_changed')::boolean and r->'changed' = '["email"]'::jsonb
+                   from public.admin_update_contact('20000000-0000-0000-0000-000000000001', 'Yanlış', 'Kişi', 'dogru@gmail.com', '5551112233') r),
+                'admin e-postayı düzeltir; yalnızca değişen alan bildirilir');
+select tests.ok((select email_normalized = 'dogru@gmail.com' from public.applications where id = '20000000-0000-0000-0000-000000000001'), 'yeni e-posta kaydedildi');
+select tests.expect_error($$select public.admin_update_contact('20000000-0000-0000-0000-000000000001', 'Yanlış', 'Kişi', ' BASKA@example.com ', '5551112233')$$, 'ERR_EMAIL_TAKEN', 'başka aktif başvurunun e-postası verilemez');
+select tests.expect_error($$select public.admin_update_contact('20000000-0000-0000-0000-000000000001', 'Yanlış', 'Kişi', 'gecersiz', '5551112233')$$, 'ERR_BAD_REQUEST', 'geçersiz e-posta reddedilir');
+select tests.ok((select r->'changed' = '[]'::jsonb from public.admin_update_contact('20000000-0000-0000-0000-000000000001', 'Yanlış', 'Kişi', 'dogru@gmail.com', '5551112233') r), 'değişiklik yoksa güncelleme yok');
+reset role;
+select tests.ok((select count(*) = 1 from public.admin_audit_logs where action = 'update_contact' and metadata = '{"fields":["email"]}'::jsonb),
+                'denetim kaydında yalnızca alan adı var, kişisel veri yok');
+delete from public.applications where id in ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

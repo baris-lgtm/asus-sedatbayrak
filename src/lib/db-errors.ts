@@ -8,6 +8,7 @@ const MESSAGES: Record<string, string> = {
   ERR_BAD_REQUEST: "Geçersiz istek.",
   ERR_QUIZ_CLOSED: "Quiz şu anda kapalı.",
   ERR_STAGE_CLOSED: "Soru alımı şu anda kapalı.",
+  ERR_EMAIL_TAKEN: "Bu e-posta adresiyle başka bir aktif başvuru var.",
 };
 
 export function dbErrorCode(error: { message?: string } | null | undefined): string | null {
