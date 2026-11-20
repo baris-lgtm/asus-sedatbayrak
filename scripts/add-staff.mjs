@@ -23,8 +23,8 @@ function loadEnv() {
 loadEnv();
 
 const [email, role = "admin"] = process.argv.slice(2);
-if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !["admin", "checkin"].includes(role)) {
-  console.error("Kullanım: npm run staff:add -- <e-posta> <admin|checkin>");
+if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || !["admin", "checkin", "moderator"].includes(role)) {
+  console.error("Kullanım: npm run staff:add -- <e-posta> <admin|checkin|moderator>");
   process.exit(1);
 }
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { authErrorResponse, requireStaff } from "@/lib/auth";
+import { AuthorizationError, authErrorResponse, requireStaff } from "@/lib/auth";
 import { extractTokenFromScan, normalizeManualCode, sha256Hex } from "@/lib/server/invitation-token";
 import { hashKey, rateLimit } from "@/lib/rate-limit";
 import type { CheckInResult } from "@/lib/types";
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   let staff;
   try {
     staff = await requireStaff();
+    if (staff.role === "moderator") throw new AuthorizationError(403);
   } catch (e) {
     const r = authErrorResponse(e);
     return NextResponse.json(r.body, { status: r.status });

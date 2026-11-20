@@ -581,4 +581,33 @@ select tests.ok((select count(*) = 1 from public.admin_audit_logs where action =
                 'denetim kaydında yalnızca alan adı var, kişisel veri yok');
 delete from public.applications where id in ('20000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000002');
 
+
+\echo '--- 25. Moderatör rolü: yalnızca sahne soruları'
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000d', 'moderator@test.local');
+insert into public.staff_members (user_id, role) values ('00000000-0000-0000-0000-00000000000d', 'moderator');
+set role service_role;
+select public.stage_submit('Zeynep', 'Moderatör testi sorusu');
+select public.stage_submit(null, 'Moderatör testi benzer soru');
+reset role;
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000d');
+select tests.ok((select count(*) = 2 from public.stage_questions), 'moderatör sahne sorularını görür');
+select tests.ok(public.admin_stage_merge((select id from public.stage_questions where author_name = 'Zeynep'),
+                array(select id from public.stage_questions where author_name is null)) = 1, 'moderatör soruları birleştirir');
+select tests.ok(public.admin_stage_set_status(array(select id from public.stage_questions where author_name = 'Zeynep'), 'asked') = 1, 'moderatör "soruldu" işaretler');
+select tests.ok(public.admin_stage_update_body((select id from public.stage_questions where author_name = 'Zeynep'), 'Düzenlenmiş soru'), 'moderatör metni düzenler');
+select tests.expect_error($$select public.admin_stage_set_open(false)$$, 'ERR_FORBIDDEN', 'moderatör soru alımını kapatamaz');
+select tests.expect_error($$select public.admin_stage_reset()$$, 'ERR_FORBIDDEN', 'moderatör tüm soruları silemez');
+select tests.ok((select count(*) = 0 from public.applications), 'moderatör başvuruları göremez');
+select tests.ok((select count(*) = 0 from public.quiz_attempts), 'moderatör quiz denemelerini göremez');
+select tests.ok(not public.is_staff(), 'moderatör check-in yapamaz (is_staff yanlış)');
+select tests.expect_error($$select * from public.check_in('sahte-token', null)$$, 'ERR_FORBIDDEN', 'moderatör check_in çağıramaz');
+select tests.expect_error($$select public.admin_update_contact(gen_random_uuid(), 'A', 'B', 'a@b.co', '5551112233')$$, 'ERR_FORBIDDEN', 'moderatör iletişim bilgisi düzeltemez');
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.ok((select count(*) = 0 from public.stage_questions), 'kapı ekibi sahne sorularını hâlâ göremez');
+select tests.ok(public.is_staff(), 'kapı ekibi check-in yetkisini korur');
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select public.admin_stage_reset();
+reset role;
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'

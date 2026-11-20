@@ -28,7 +28,19 @@ function time(iso: string) {
   return new Intl.DateTimeFormat("tr-TR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Istanbul" }).format(new Date(iso));
 }
 
-export function StageBoard({ initial, formUrl, qrSvgHref, qrPngHref }: { initial: StageList; formUrl: string; qrSvgHref: string; qrPngHref: string }) {
+export function StageBoard({
+  initial,
+  formUrl,
+  qrSvgHref,
+  qrPngHref,
+  isAdmin,
+}: {
+  initial: StageList;
+  formUrl: string;
+  qrSvgHref: string;
+  qrPngHref: string;
+  isAdmin: boolean;
+}) {
   const [data, setData] = useState(initial);
   const [tab, setTab] = useState<Tab>("new");
   const [checked, setChecked] = useState<string[]>([]);
@@ -89,6 +101,7 @@ export function StageBoard({ initial, formUrl, qrSvgHref, qrPngHref }: { initial
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
+          {isAdmin && (
           <button
             type="button"
             disabled={pending}
@@ -100,6 +113,7 @@ export function StageBoard({ initial, formUrl, qrSvgHref, qrPngHref }: { initial
           >
             {data.open ? "Soru alımını kapat" : "Soru alımını aç"}
           </button>
+          )}
           <span className="text-xs text-graphite">
             Durum: <b className={data.open ? "text-ok" : "text-err"}>{data.open ? "Açık" : "Kapalı"}</b> ·{" "}
             <a className="underline" href={qrPngHref} download="mimarligin-evrimi-soru-qr.png">QR (PNG)</a> ·{" "}
@@ -181,7 +195,7 @@ export function StageBoard({ initial, formUrl, qrSvgHref, qrPngHref }: { initial
         </ul>
       )}
 
-      <ResetStage count={data.questions.length} run={run} pending={pending} />
+      {isAdmin && <ResetStage count={data.questions.length} run={run} pending={pending} />}
     </div>
   );
 }

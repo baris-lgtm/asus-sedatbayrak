@@ -18,7 +18,12 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           { href: "/admin/quiz", label: "Quiz" },
           { href: "/admin/ayarlar", label: "Etkinlik ayarları" },
         ]
-      : [{ href: "/admin/check-in", label: "Check-in" }];
+      : staff.role === "moderator"
+        ? [
+            { href: "/admin/sorular/sahne", label: "Moderatör ekranı" },
+            { href: "/admin/sorular", label: "Sahne soruları" },
+          ]
+        : [{ href: "/admin/check-in", label: "Check-in" }];
 
   return (
     <div className="min-h-dvh bg-mist">

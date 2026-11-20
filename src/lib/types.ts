@@ -60,7 +60,7 @@ export const EMAIL_STATUS_LABELS: Record<EmailStatus, string> = {
   skipped: "Atlandı",
 };
 
-export type StaffRole = "admin" | "checkin";
+export type StaffRole = "admin" | "checkin" | "moderator";
 
 export interface Application {
   id: string;

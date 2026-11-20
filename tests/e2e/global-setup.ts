@@ -47,6 +47,7 @@ export default async function globalSetup() {
   const { error } = await db.from("staff_members").insert([
     { user_id: ids.admin, role: "admin" },
     { user_id: ids.door, role: "checkin" },
+    { user_id: ids.moderator, role: "moderator" },
   ]);
   if (error) throw new Error(`Personel rolleri eklenemedi: ${error.message}`);
 

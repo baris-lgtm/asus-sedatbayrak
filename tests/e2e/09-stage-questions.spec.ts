@@ -98,4 +98,31 @@ test.describe("Sahneye soru sor", () => {
     await expect(page).not.toHaveURL(/\/admin\/sorular$/);
     await ctx.close();
   });
+
+  test("moderatör yalnızca sahne sorularını görür ve 'Soruldu' der; başka sayfalara giremez", async ({ browser }) => {
+    await service().rpc("stage_submit", { p_name: "Deniz", p_body: "Moderatör ekranı testi sorusu" });
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    page.on("dialog", (d) => d.accept());
+    await uiLogin(page, USERS.moderator);
+    await expect(page).toHaveURL(/\/admin\/sorular\/sahne$/);
+    await expect(page.getByRole("link", { name: "Başvurular" })).toHaveCount(0);
+
+    await page.getByRole("link", { name: "Sahne soruları" }).click();
+    await expect(page.getByRole("button", { name: /Soru alımını/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Tüm soruları sil" })).toHaveCount(0);
+    const card = page.getByRole("listitem").filter({ hasText: "Moderatör ekranı testi" }).first();
+    await card.getByRole("button", { name: "Moderatöre ilet" }).click();
+    await page.goto("/admin/sorular/sahne");
+    await page.getByRole("button", { name: "Soruldu" }).click();
+    await expect(page.getByText("Henüz iletilen soru yok")).toBeVisible();
+
+    for (const path of ["/admin", "/admin/check-in", "/admin/quiz", "/admin/toplu-ret", "/admin/ayarlar"]) {
+      await page.goto(path);
+      await expect(page, path).toHaveURL(/\/admin\/sorular\/sahne$/);
+    }
+    const res = await page.request.post("/api/admin/check-in", { data: { token: "x" }, headers: { origin: "http://localhost:3000" } });
+    expect(res.status()).toBe(403);
+    await ctx.close();
+  });
 });

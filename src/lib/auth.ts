@@ -71,9 +71,28 @@ export async function requireStaffPage(): Promise<StaffSession> {
   return staff;
 }
 
+/** Her rolün giriş sonrası ana sayfası. */
+export function homeFor(role: StaffRole): string {
+  return role === "admin" ? "/admin" : role === "moderator" ? "/admin/sorular/sahne" : "/admin/check-in";
+}
+
 export async function requireAdminPage(): Promise<StaffSession> {
   const staff = await requireStaffPage();
-  if (staff.role !== "admin") redirect("/admin/check-in");
+  if (staff.role !== "admin") redirect(homeFor(staff.role));
+  return staff;
+}
+
+/** Check-in ekranı: admin + kapı ekibi (moderatör değil). */
+export async function requireCheckinPage(): Promise<StaffSession> {
+  const staff = await requireStaffPage();
+  if (staff.role === "moderator") redirect(homeFor(staff.role));
+  return staff;
+}
+
+/** Sahne soruları: admin + moderatör. */
+export async function requireStageStaffPage(): Promise<StaffSession> {
+  const staff = await requireStaffPage();
+  if (staff.role !== "admin" && staff.role !== "moderator") redirect(homeFor(staff.role));
   return staff;
 }
 
@@ -88,6 +107,12 @@ export class AuthorizationError extends Error {
 export async function requireStaff(): Promise<StaffSession> {
   const staff = await getStaff();
   if (!staff) throw new AuthorizationError(401);
+  return staff;
+}
+
+export async function requireStageStaff(): Promise<StaffSession> {
+  const staff = await requireStaff();
+  if (staff.role !== "admin" && staff.role !== "moderator") throw new AuthorizationError(403);
   return staff;
 }
 

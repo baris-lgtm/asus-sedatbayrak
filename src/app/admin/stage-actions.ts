@@ -5,7 +5,7 @@
  * DB fonksiyonu (yetki orada da kontrol edilir, denetim kaydı yazılır).
  */
 import { z } from "zod";
-import { AuthorizationError, TransientAuthError, requireAdmin } from "@/lib/auth";
+import { AuthorizationError, TransientAuthError, requireAdmin, requireStageStaff } from "@/lib/auth";
 import { dbErrorCode, dbErrorMessage } from "@/lib/db-errors";
 
 export type StageStatus = "new" | "selected" | "asked" | "archived" | "merged";
@@ -43,7 +43,7 @@ const settable = z.enum(["new", "selected", "asked", "archived"]);
 
 export async function listStageQuestions(): Promise<StageList> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireStageStaff();
     const [s, q] = await Promise.all([
       admin.supabase.from("stage_settings").select("is_open").eq("id", 1).single<{ is_open: boolean }>(),
       admin.supabase
@@ -62,7 +62,7 @@ export async function listStageQuestions(): Promise<StageList> {
 
 export async function setStageStatusAction(idList: string[], status: string): Promise<StageResult> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireStageStaff();
     const p = ids.safeParse(idList);
     const st = settable.safeParse(status);
     if (!p.success || !st.success) return { ok: false, message: "Geçersiz istek." };
@@ -76,7 +76,7 @@ export async function setStageStatusAction(idList: string[], status: string): Pr
 
 export async function mergeStageAction(target: string, idList: string[]): Promise<StageResult> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireStageStaff();
     const t = z.uuid().safeParse(target);
     const p = ids.safeParse(idList);
     if (!t.success || !p.success) return { ok: false, message: "Geçersiz istek." };
@@ -91,7 +91,7 @@ export async function mergeStageAction(target: string, idList: string[]): Promis
 
 export async function updateStageBodyAction(id: string, body: string): Promise<StageResult> {
   try {
-    const admin = await requireAdmin();
+    const admin = await requireStageStaff();
     const v = z.object({ id: z.uuid(), body: z.string().trim().min(3).max(600) }).safeParse({ id, body });
     if (!v.success) return { ok: false, message: "Soru metni 3–600 karakter olmalı." };
     const { error } = await admin.supabase.rpc("admin_stage_update_body", { p_id: v.data.id, p_body: v.data.body });

@@ -1,8 +1,8 @@
-import { requireStaffPage } from "@/lib/auth";
+import { requireCheckinPage } from "@/lib/auth";
 import { CheckInScanner } from "./scanner";
 
 export default async function CheckInPage() {
-  await requireStaffPage();
+  await requireCheckinPage();
   return (
     <div className="mx-auto max-w-xl">
       <h1 className="display text-4xl">Check-in</h1>

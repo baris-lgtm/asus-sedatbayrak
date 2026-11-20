@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import QRCode from "qrcode";
-import { requireAdminPage } from "@/lib/auth";
+import { requireStageStaffPage } from "@/lib/auth";
 import { siteUrl } from "@/lib/env";
 import { listStageQuestions } from "@/app/admin/stage-actions";
 import { StageBoard } from "./stage-board";
@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Sahne soruları" };
 export const dynamic = "force-dynamic";
 
 export default async function StageQuestionsPage() {
-  await requireAdminPage();
+  const staff = await requireStageStaffPage();
   const initial = await listStageQuestions();
   const url = `${siteUrl()}/soru`;
   // LED/sunum ekibi için yüksek çözünürlüklü QR (beyaz zemin, siyah kod; okunurluk için kenar boşluklu)
@@ -23,6 +23,7 @@ export default async function StageQuestionsPage() {
       formUrl={url}
       qrSvgHref={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`}
       qrPngHref={qrPng}
+      isAdmin={staff.role === "admin"}
     />
   );
 }

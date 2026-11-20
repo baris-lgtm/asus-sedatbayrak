@@ -11,6 +11,7 @@ export const MAIL_DIR = env.EMAIL_TEST_SINK_DIR || "/var/tmp/workshop-mail";
 export const USERS = {
   admin: { email: "admin@test.local", password: "Admin-Test-Parola-1!" },
   door: { email: "kapi@test.local", password: "Kapi-Test-Parola-1!" },
+  moderator: { email: "moderator@test.local", password: "Moderator-Test-Parola-1!" },
   outsider: { email: "disari@test.local", password: "Disari-Test-Parola-1!" },
 } as const;
 

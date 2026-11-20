@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createSessionClient } from "@/lib/supabase/server";
 import { clientIp, hashKey, rateLimit } from "@/lib/rate-limit";
+import { homeFor } from "@/lib/auth";
+import type { StaffRole } from "@/lib/types";
 
 export interface LoginState {
   error?: string;
@@ -27,12 +29,12 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) return { error: "E-posta veya parola hatalı." };
 
-  const { data: staff } = await supabase.from("staff_members").select("role").eq("user_id", data.user.id).maybeSingle<{ role: string }>();
+  const { data: staff } = await supabase.from("staff_members").select("role").eq("user_id", data.user.id).maybeSingle<{ role: StaffRole }>();
   if (!staff) {
     await supabase.auth.signOut();
     return { error: "Bu hesabın yönetim paneline erişim yetkisi yok." };
   }
-  redirect(staff.role === "admin" ? "/admin" : "/admin/check-in");
+  redirect(homeFor(staff.role));
 }
 
 export async function signOut() {
