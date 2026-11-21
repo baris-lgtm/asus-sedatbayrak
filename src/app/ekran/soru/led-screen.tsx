@@ -16,7 +16,7 @@ function pickRatio(): Ratio {
   return r > 1.3 ? "16x9" : r < 0.77 ? "9x16" : "1x1";
 }
 
-export function LedScreen({ qrSvg, shortUrl }: { qrSvg: string; shortUrl: string }) {
+export function LedScreen({ qrSvg, shortUrl }: { qrSvg?: string; shortUrl?: string }) {
   const [ratio, setRatio] = useState<Ratio>("16x9");
   const [ready, setReady] = useState(false);
 
@@ -54,11 +54,12 @@ export function LedScreen({ qrSvg, shortUrl }: { qrSvg: string; shortUrl: string
         />
       )}
 
+      {qrSvg && (
       <div
         className={`absolute flex flex-col items-center rounded-[1.2vmin] bg-black/75 text-center shadow-[0_2vmin_6vmin_rgba(0,0,0,0.55)] ring-1 ring-white/15 backdrop-blur-md ${
-          portrait ? "top-[4vh] left-1/2 -translate-x-1/2 p-[2.6vmin]" : "bottom-[4.5vmin] right-[4.5vmin] p-[2.4vmin]"
+          portrait ? "right-[4vmin] top-[4vmin] p-[2.4vmin]" : "right-[4.5vmin] top-[4.5vmin] p-[2.4vmin]"
         }`}
-        style={{ width: portrait ? "46vmin" : ratio === "1x1" ? "36vmin" : "30vmin" }}
+        style={{ width: portrait ? "40vmin" : ratio === "1x1" ? "36vmin" : "30vmin" }}
       >
         <p className="font-semibold leading-tight" style={{ fontSize: portrait ? "4.4vmin" : "3vmin" }}>
           Sahneye Soru Sor
@@ -71,6 +72,7 @@ export function LedScreen({ qrSvg, shortUrl }: { qrSvg: string; shortUrl: string
           {shortUrl}
         </p>
       </div>
+      )}
     </div>
   );
 }
