@@ -45,7 +45,6 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       label: "Giriş yapan",
       value: stats ? stats.checked_in + manual : undefined,
       status: "checked_in",
-      note: stats && manual > 0 ? `QR: ${stats.checked_in} · kapıda sayılan: ${manual}` : undefined,
     },
   ];
 

@@ -12,7 +12,7 @@ test("kapıda sayılan giriş toplam 'Giriş yapan'a eklenir, kişi kayıtların
   await page.getByRole("button", { name: "Kaydet" }).click();
   await expect(page.getByText("Kapıda sayılan giriş 85 olarak kaydedildi.")).toBeVisible();
   await page.reload();
-  await expect(page.getByText(`QR: ${before} · kapıda sayılan: 85`)).toBeVisible();
+  await expect(page.getByText(/QR: \d+ · kapıda sayılan/)).toHaveCount(0);
   await expect(page.getByText(String((before ?? 0) + 85), { exact: true })).toBeVisible();
   const { count: after } = await db.from("applications").select("id", { count: "exact", head: true }).eq("status", "checked_in");
   expect(after).toBe(before);
