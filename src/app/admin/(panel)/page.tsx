@@ -4,6 +4,7 @@ import { listApplications, latestEmailStatus, parseListParams, PAGE_SIZE } from 
 import { formatDateTime } from "@/lib/format";
 import { APPLICATION_STATUSES, EMAIL_TYPE_LABELS, PARTICIPANT_LABELS, STATUS_LABELS, type AdminStats } from "@/lib/types";
 import { EmailStatusText, StatusBadge } from "@/components/admin/status-badge";
+import { ManualCheckins } from "@/components/admin/manual-checkins";
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const admin = await requireAdminPage();
@@ -33,13 +34,19 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
 
   const exportQs = new URLSearchParams({ ...(params.q ? { q: params.q } : {}), ...(params.status !== "all" ? { status: params.status } : {}), ...(params.failedEmail ? { eposta: "basarisiz" } : {}), sort: params.sort });
 
-  const cards: { label: string; value: number | undefined; status?: string; strong?: boolean }[] = [
+  const manual = stats?.manual_checkins ?? 0;
+  const cards: { label: string; value: number | undefined; status?: string; strong?: boolean; note?: string }[] = [
     { label: "Toplam başvuru", value: stats?.total },
     { label: "İnceleme bekleyen", value: stats ? stats.pending + stats.reviewing : undefined, status: "pending", strong: true },
     { label: "Onaylanan", value: stats ? stats.approved + stats.checked_in : undefined, status: "approved" },
     { label: "Yedek liste", value: stats?.waitlisted, status: "waitlisted" },
     { label: "Reddedilen", value: stats?.rejected, status: "rejected" },
-    { label: "Giriş yapan", value: stats?.checked_in, status: "checked_in" },
+    {
+      label: "Giriş yapan",
+      value: stats ? stats.checked_in + manual : undefined,
+      status: "checked_in",
+      note: stats && manual > 0 ? `QR: ${stats.checked_in} · kapıda sayılan: ${manual}` : undefined,
+    },
   ];
 
   return (
@@ -68,9 +75,15 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
             <div key={c.label} className="bg-paper p-4">
               <dt className="text-xs text-graphite">{c.label}</dt>
               <dd className={`mt-1 text-3xl font-bold tabular-nums ${c.strong ? "text-blue" : ""}`}>{c.value ?? "—"}</dd>
+              {c.note && <dd className="mt-1 text-xs text-graphite">{c.note}</dd>}
             </div>
           ))}
         </dl>
+        {stats && stats.manual_checkins !== undefined && (
+          <div className="mt-3">
+            <ManualCheckins count={manual} note={stats.manual_checkins_note ?? null} />
+          </div>
+        )}
       </section>
 
       <section aria-label="Filtreler" className="border border-rule bg-paper p-4">

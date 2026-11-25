@@ -539,3 +539,20 @@ export async function updateContactAction(_prev: ActionState, formData: FormData
     return fail(e);
   }
 }
+
+/** Kapıda QR okutulmadan sayılarak alınan katılımcı sayısı (kişi kayıtlarına dokunmaz). */
+export async function setManualCheckinsAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    const admin = await requireAdmin();
+    const parsed = z
+      .object({ count: z.coerce.number().int().min(0).max(5000), note: z.string().trim().max(200).optional() })
+      .safeParse({ count: formData.get("count"), note: formData.get("note") ?? undefined });
+    if (!parsed.success) return { ok: false, message: "0 ile 5000 arasında bir sayı yaz." };
+    const { error } = await admin.supabase.rpc("admin_set_manual_checkins", { p_count: parsed.data.count, p_note: parsed.data.note ?? null });
+    if (error) return { ok: false, message: dbErrorMessage(error) };
+    revalidatePath("/admin", "layout");
+    return { ok: true, message: `Kapıda sayılan giriş ${parsed.data.count} olarak kaydedildi.` };
+  } catch (e) {
+    return fail(e);
+  }
+}

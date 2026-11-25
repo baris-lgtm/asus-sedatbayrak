@@ -141,6 +141,9 @@ export interface AdminStats {
   checked_in: number;
   capacity: number;
   failed_emails: number;
+  /** Kapıda QR okutulmadan, sayılarak alınan katılımcı (kişi kaydı yok). Migration 0012 öncesi undefined. */
+  manual_checkins?: number;
+  manual_checkins_note?: string | null;
 }
 
 export type CheckInResult =

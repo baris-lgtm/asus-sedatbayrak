@@ -610,4 +610,17 @@ select tests.login('00000000-0000-0000-0000-00000000000a');
 select public.admin_stage_reset();
 reset role;
 
+
+\echo '--- 26. Kapıda sayılan giriş (kişi kayıtlarına dokunmaz)'
+set role authenticated;
+select tests.login('00000000-0000-0000-0000-00000000000c');
+select tests.expect_error($$select public.admin_set_manual_checkins(85, null)$$, 'ERR_FORBIDDEN', 'kapı ekibi kapıda sayılan girişi değiştiremez');
+select tests.login('00000000-0000-0000-0000-00000000000a');
+select tests.ok(public.admin_set_manual_checkins(85, 'Kapıda QR okutulmadan sayıldı') = 85, 'admin kapıda sayılan girişi kaydeder');
+select tests.ok((public.admin_stats()->>'manual_checkins')::int = 85, 'istatistikte görünür');
+select tests.expect_error($$select public.admin_set_manual_checkins(-1, null)$$, 'ERR_BAD_REQUEST', 'negatif sayı reddedilir');
+select public.admin_set_manual_checkins(0, null);
+reset role;
+select tests.ok((select count(*) = 1 from public.admin_audit_logs where action = 'set_manual_checkins' and metadata = '{"from":0,"to":85}'::jsonb), 'değişiklik denetim kaydına yazılır');
+
 \echo 'TÜM DB TESTLERİ GEÇTİ'
